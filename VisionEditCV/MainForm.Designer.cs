@@ -20,6 +20,9 @@ namespace VisionEditCV
         private System.Windows.Forms.Panel _effectSubPanel;
         private System.Windows.Forms.Panel _bottomContainer;
 
+        // ── Right panel extras ───────────────────────────────────────────────
+        private DarkButton _btnClearMasks;
+
         // ── Left panel ───────────────────────────────────────────────────────
         private System.Windows.Forms.Label           _titleLabel;
         private System.Windows.Forms.Label           _effectsLabel;
@@ -33,6 +36,8 @@ namespace VisionEditCV
         private DarkButton _btnCompare;
         private DarkButton _btnSave;
         private System.Windows.Forms.Panel _leftBottomSpacer2;
+        private System.Windows.Forms.Panel _leftBtnSpacer;
+        private System.Windows.Forms.Panel _leftBtnSpacer2;
 
         // ── Center panel ─────────────────────────────────────────────────────
         private VisionEditCV.Controls.ImageCanvas _canvas;
@@ -65,6 +70,7 @@ namespace VisionEditCV
 
         // ── No-effect placeholder ───────────────────────────────────────────
         private System.Windows.Forms.Label _lblNoEffect;
+        private System.Windows.Forms.Label _controlsLabel;
 
         // ── Applied effects tracking ────────────────────────────────────────
         private System.Windows.Forms.FlowLayoutPanel _appliedEffectsPanel;
@@ -78,6 +84,7 @@ namespace VisionEditCV
         private System.Windows.Forms.Panel _panelPortrait;
         private System.Windows.Forms.Panel _panelGrayscale;
         private DarkButton                 _btnApplyEffect;
+        private DarkButton                 _btnResetEffect;
 
         // ── Color Grading controls ───────────────────────────────────────────
         private System.Windows.Forms.FlowLayoutPanel _cgFlow;
@@ -95,19 +102,30 @@ namespace VisionEditCV
         private SliderControl               _cgContrast;
         private System.Windows.Forms.Panel  _grpCgTb;
         private System.Windows.Forms.Label  _lblCgTb;
-        private System.Windows.Forms.CheckBox _cgTargetBg;
+        private DarkButton _btnCgFg;
+        private DarkButton _btnCgBg;
 
         // ── Grayscale controls ───────────────────────────────────────────────
         private System.Windows.Forms.FlowLayoutPanel _gsFlow;
         private System.Windows.Forms.Panel  _grpGsTb;
         private System.Windows.Forms.Label  _lblGsTb;
-        private System.Windows.Forms.CheckBox _gsTargetBg;
+        private DarkButton _btnGsFg;
+        private DarkButton _btnGsBg;
 
         // ── Artistic controls ────────────────────────────────────────────────
         private System.Windows.Forms.FlowLayoutPanel _artFlow;
-        private System.Windows.Forms.Panel  _grpArtInt;
-        private System.Windows.Forms.Label  _lblArtInt;
-        private SliderControl               _artIntensity;
+        private System.Windows.Forms.Panel        _grpArtMode;
+        private DarkButton                        _btnArtStylize;
+        private DarkButton                        _btnArtPencil;
+        private System.Windows.Forms.Panel        _grpArtSigmaS;
+        private System.Windows.Forms.Label        _lblArtSigmaS;
+        private SliderControl                     _artSigmaS;
+        private System.Windows.Forms.Panel        _grpArtSigmaR;
+        private System.Windows.Forms.Label        _lblArtSigmaR;
+        private SliderControl                     _artSigmaR;
+        private System.Windows.Forms.Panel        _grpArtShade;
+        private System.Windows.Forms.Label        _lblArtShade;
+        private SliderControl                     _artShade;
 
         // ── Sticker controls ─────────────────────────────────────────────────
         private System.Windows.Forms.FlowLayoutPanel _stFlow;
@@ -128,10 +146,10 @@ namespace VisionEditCV
         private SliderControl               _stShadowBlur;
         private System.Windows.Forms.Panel  _grpStBg;
         private System.Windows.Forms.Label  _lblStBg;
-        private System.Windows.Forms.RadioButton _rdoStickerOriginalBg;
-        private System.Windows.Forms.RadioButton _rdoStickerColorBg;
-        private System.Windows.Forms.RadioButton _rdoStickerImageBg;
-        private System.Windows.Forms.RadioButton _rdoStickerTransparentBg;
+        private DarkButton _btnStBgOriginal;
+        private DarkButton _btnStBgSolid;
+        private DarkButton _btnStBgImage;
+        private DarkButton _btnStBgTransparent;
         private ColorSwatch                      _stBgColorSwatch;
         private DarkButton                       _btnStickerUploadBg;
 
@@ -170,15 +188,19 @@ namespace VisionEditCV
             _leftFlow = new FlowLayoutPanel();
             _btnGrayscale = new DarkButton();
             _leftBottomSpacer2 = new Panel();
+            _leftBtnSpacer = new Panel();
+            _leftBtnSpacer2 = new Panel();
             _btnSave = new DarkButton();
             _btnCompare = new DarkButton();
             _leftPanel = new Panel();
             _leftBottomSpacer = new Panel();
             _maskListTitle = new Label();
             _maskList = new MaskListPanel();
+            _btnClearMasks = new DarkButton();
             _rightPanel = new Panel();
             _effectSubPanel = new Panel();
             _lblNoEffect = new Label();
+            _controlsLabel = new Label();
             _panelColorGrading = new Panel();
             _cgFlow = new FlowLayoutPanel();
             _grpCgTint = new Panel();
@@ -195,12 +217,22 @@ namespace VisionEditCV
             _cgContrast = new SliderControl();
             _grpCgTb = new Panel();
             _lblCgTb = new Label();
-            _cgTargetBg = new CheckBox();
+            _btnCgFg = new DarkButton();
+            _btnCgBg = new DarkButton();
             _panelArtistic = new Panel();
             _artFlow = new FlowLayoutPanel();
-            _grpArtInt = new Panel();
-            _lblArtInt = new Label();
-            _artIntensity = new SliderControl();
+            _grpArtMode = new Panel();
+            _btnArtStylize = new DarkButton();
+            _btnArtPencil = new DarkButton();
+            _grpArtSigmaS = new Panel();
+            _lblArtSigmaS = new Label();
+            _artSigmaS = new SliderControl();
+            _grpArtSigmaR = new Panel();
+            _lblArtSigmaR = new Label();
+            _artSigmaR = new SliderControl();
+            _grpArtShade = new Panel();
+            _lblArtShade = new Label();
+            _artShade = new SliderControl();
             _panelSticker = new Panel();
             _stFlow = new FlowLayoutPanel();
             _grpStSc = new Panel();
@@ -220,10 +252,10 @@ namespace VisionEditCV
             _stShadowBlur = new SliderControl();
             _grpStBg = new Panel();
             _lblStBg = new Label();
-            _rdoStickerOriginalBg = new RadioButton();
-            _rdoStickerColorBg = new RadioButton();
-            _rdoStickerImageBg = new RadioButton();
-            _rdoStickerTransparentBg = new RadioButton();
+            _btnStBgOriginal    = new DarkButton();
+            _btnStBgSolid       = new DarkButton();
+            _btnStBgImage       = new DarkButton();
+            _btnStBgTransparent = new DarkButton();
             _stBgColorSwatch = new ColorSwatch();
             _btnStickerUploadBg = new DarkButton();
             _panelPixelBlur = new Panel();
@@ -251,8 +283,10 @@ namespace VisionEditCV
             _gsFlow = new FlowLayoutPanel();
             _grpGsTb = new Panel();
             _lblGsTb = new Label();
-            _gsTargetBg = new CheckBox();
+            _btnGsFg = new DarkButton();
+            _btnGsBg = new DarkButton();
             _btnApplyEffect = new DarkButton();
+            _btnResetEffect = new DarkButton();
             _appliedEffectsPanel = new FlowLayoutPanel();
             _lblSelMode = new Label();
             _btnBBox = new DarkButton();
@@ -266,13 +300,13 @@ namespace VisionEditCV
             _topBar = new Panel();
             label1 = new Label();
             _btnStartServer = new DarkButton();
+            _btnChangeImage = new DarkButton();
             _bottomBar = new Panel();
             _bottomContainer = new Panel();
             _btnResetAll = new DarkButton();
             _loadingLabel = new Label();
             _loadingOverlay = new Panel();
             _canvas = new ImageCanvas();
-            _btnChangeImage = new DarkButton();
             _centerPanel = new Panel();
             _leftFlow.SuspendLayout();
             _leftPanel.SuspendLayout();
@@ -287,7 +321,10 @@ namespace VisionEditCV
             _grpCgTb.SuspendLayout();
             _panelArtistic.SuspendLayout();
             _artFlow.SuspendLayout();
-            _grpArtInt.SuspendLayout();
+            _grpArtMode.SuspendLayout();
+            _grpArtSigmaS.SuspendLayout();
+            _grpArtSigmaR.SuspendLayout();
+            _grpArtShade.SuspendLayout();
             _panelSticker.SuspendLayout();
             _stFlow.SuspendLayout();
             _grpStSc.SuspendLayout();
@@ -320,12 +357,9 @@ namespace VisionEditCV
             // 
             _titleLabel.BackColor = Color.Transparent;
             _titleLabel.Dock = DockStyle.Top;
-            _titleLabel.Font = new Font("Segoe UI", 13F, FontStyle.Bold);
-            _titleLabel.Location = new Point(12, 16);
             _titleLabel.Name = "_titleLabel";
             _titleLabel.Size = new Size(180, 0);
             _titleLabel.TabIndex = 2;
-            _titleLabel.TextAlign = ContentAlignment.MiddleLeft;
             _titleLabel.Visible = false;
             // 
             // _effectsLabel
@@ -333,7 +367,7 @@ namespace VisionEditCV
             _effectsLabel.BackColor = Color.Transparent;
             _effectsLabel.Dock = DockStyle.Top;
             _effectsLabel.Font = new Font("Segoe UI", 13F, FontStyle.Bold);
-            _effectsLabel.ForeColor = Color.FromArgb(220, 220, 220);
+            _effectsLabel.ForeColor = Color.FromArgb(0, 229, 255);
             _effectsLabel.Location = new Point(12, 16);
             _effectsLabel.Name = "_effectsLabel";
             _effectsLabel.Padding = new Padding(2, 0, 0, 4);
@@ -486,8 +520,7 @@ namespace VisionEditCV
             _btnSave.FlatStyle = FlatStyle.Flat;
             _btnSave.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             _btnSave.ForeColor = Color.FromArgb(13, 13, 13);
-            _btnSave.Icon = "💾";
-            _btnSave.Location = new Point(12, 663);
+            _btnSave.Icon = "↓";
             _btnSave.Name = "_btnSave";
             _btnSave.Padding = new Padding(8, 0, 0, 0);
             _btnSave.Size = new Size(180, 44);
@@ -504,8 +537,7 @@ namespace VisionEditCV
             _btnCompare.FlatStyle = FlatStyle.Flat;
             _btnCompare.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             _btnCompare.ForeColor = Color.FromArgb(220, 220, 220);
-            _btnCompare.Icon = "🖼️";
-            _btnCompare.Location = new Point(12, 619);
+            _btnCompare.Icon = "◁";
             _btnCompare.Name = "_btnCompare";
             _btnCompare.Padding = new Padding(8, 0, 0, 0);
             _btnCompare.Size = new Size(180, 44);
@@ -523,8 +555,11 @@ namespace VisionEditCV
             _leftPanel.Controls.Add(_titleLabel);
             _leftPanel.Controls.Add(_leftBottomSpacer2);
             _leftPanel.Controls.Add(_leftBottomSpacer);
-            _leftPanel.Controls.Add(_btnCompare);
             _leftPanel.Controls.Add(_btnSave);
+            _leftPanel.Controls.Add(_leftBtnSpacer);
+            _leftPanel.Controls.Add(_btnCompare);
+            _leftPanel.Controls.Add(_leftBtnSpacer2);
+            _leftPanel.Controls.Add(_btnChangeImage);
             _leftPanel.Dock = DockStyle.Left;
             _leftPanel.Location = new Point(0, 60);
             _leftPanel.Name = "_leftPanel";
@@ -540,13 +575,29 @@ namespace VisionEditCV
             _leftBottomSpacer.Name = "_leftBottomSpacer";
             _leftBottomSpacer.Size = new Size(180, 8);
             _leftBottomSpacer.TabIndex = 3;
+            //
+            // _leftBtnSpacer
+            //
+            _leftBtnSpacer.BackColor = Color.Transparent;
+            _leftBtnSpacer.Dock = DockStyle.Bottom;
+            _leftBtnSpacer.Name = "_leftBtnSpacer";
+            _leftBtnSpacer.Size = new Size(180, 12);
+            _leftBtnSpacer.TabIndex = 9;
+            //
+            // _leftBtnSpacer2
+            //
+            _leftBtnSpacer2.BackColor = Color.Transparent;
+            _leftBtnSpacer2.Dock = DockStyle.Bottom;
+            _leftBtnSpacer2.Name = "_leftBtnSpacer2";
+            _leftBtnSpacer2.Size = new Size(180, 12);
+            _leftBtnSpacer2.TabIndex = 10;
             // 
             // _maskListTitle
             // 
             _maskListTitle.BackColor = Color.Transparent;
             _maskListTitle.Dock = DockStyle.Top;
             _maskListTitle.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
-            _maskListTitle.ForeColor = Color.FromArgb(160, 165, 190);
+            _maskListTitle.ForeColor = Color.FromArgb(0, 229, 255);
             _maskListTitle.Location = new Point(0, 12);
             _maskListTitle.Name = "_maskListTitle";
             _maskListTitle.Size = new Size(260, 36);
@@ -569,6 +620,7 @@ namespace VisionEditCV
             // 
             _rightPanel.BackColor = Color.FromArgb(18, 18, 18);
             _rightPanel.Controls.Add(_maskList);
+            _rightPanel.Controls.Add(_btnClearMasks);
             _rightPanel.Controls.Add(_maskListTitle);
             _rightPanel.Dock = DockStyle.Right;
             _rightPanel.Location = new Point(1800, 60);
@@ -577,6 +629,22 @@ namespace VisionEditCV
             _rightPanel.Size = new Size(260, 721);
             _rightPanel.TabIndex = 2;
             _rightPanel.Visible = false;
+            //
+            // _btnClearMasks
+            //
+            _btnClearMasks.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            _btnClearMasks.BackColor = Color.FromArgb(80, 30, 30);
+            _btnClearMasks.FlatAppearance.BorderColor = Color.FromArgb(180, 60, 60);
+            _btnClearMasks.FlatAppearance.BorderSize = 1;
+            _btnClearMasks.FlatStyle = FlatStyle.Flat;
+            _btnClearMasks.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            _btnClearMasks.ForeColor = Color.FromArgb(255, 120, 120);
+            _btnClearMasks.Location = new Point(10, 680);
+            _btnClearMasks.Name = "_btnClearMasks";
+            _btnClearMasks.Size = new Size(240, 34);
+            _btnClearMasks.TabIndex = 2;
+            _btnClearMasks.Text = "Clear All Masks";
+            _btnClearMasks.UseVisualStyleBackColor = false;
             // 
             // _effectSubPanel
             // 
@@ -588,12 +656,13 @@ namespace VisionEditCV
             _effectSubPanel.Controls.Add(_panelPortrait);
             _effectSubPanel.Controls.Add(_panelGrayscale);
             _effectSubPanel.Controls.Add(_btnApplyEffect);
+            _effectSubPanel.Controls.Add(_btnResetEffect);
             _effectSubPanel.Controls.Add(_appliedEffectsPanel);
             _effectSubPanel.Dock = DockStyle.Fill;
             _effectSubPanel.Location = new Point(0, 0);
             _effectSubPanel.Name = "_effectSubPanel";
-            _effectSubPanel.Padding = new Padding(16, 8, 16, 8);
-            _effectSubPanel.Size = new Size(2060, 170);
+            _effectSubPanel.Padding = new Padding(16, 6, 160, 6);
+            _effectSubPanel.Size = new Size(2060, 120);
             _effectSubPanel.TabIndex = 0;
             _effectSubPanel.Resize += EffectSubPanelResize;
             // 
@@ -609,7 +678,18 @@ namespace VisionEditCV
             _lblNoEffect.TabIndex = 0;
             _lblNoEffect.Text = "Select an effect from the left panel to get started";
             _lblNoEffect.TextAlign = ContentAlignment.MiddleCenter;
-            // 
+            //
+            // _controlsLabel
+            //
+            _controlsLabel.AutoSize = true;
+            _controlsLabel.BackColor = Color.FromArgb(18, 18, 18);
+            _controlsLabel.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
+            _controlsLabel.ForeColor = Color.FromArgb(0, 229, 255);
+            _controlsLabel.Location = new Point(6, 3);
+            _controlsLabel.Name = "_controlsLabel";
+            _controlsLabel.TabIndex = 11;
+            _controlsLabel.Text = "Controls";
+            //
             // _panelColorGrading
             // 
             _panelColorGrading.BackColor = Color.Transparent;
@@ -632,8 +712,9 @@ namespace VisionEditCV
             _cgFlow.Dock = DockStyle.Fill;
             _cgFlow.Location = new Point(0, 0);
             _cgFlow.Name = "_cgFlow";
-            _cgFlow.Size = new Size(2028, 122);
+            _cgFlow.Size = new Size(2028, 108);
             _cgFlow.TabIndex = 0;
+            _cgFlow.WrapContents = false;
             // 
             // _grpCgTint
             // 
@@ -643,7 +724,7 @@ namespace VisionEditCV
             _grpCgTint.Location = new Point(0, 0);
             _grpCgTint.Margin = new Padding(0, 0, 14, 0);
             _grpCgTint.Name = "_grpCgTint";
-            _grpCgTint.Size = new Size(170, 90);
+            _grpCgTint.Size = new Size(170, 76);
             _grpCgTint.TabIndex = 0;
             // 
             // _lblCgTint
@@ -674,7 +755,7 @@ namespace VisionEditCV
             _grpCgTs.Location = new Point(184, 0);
             _grpCgTs.Margin = new Padding(0, 0, 14, 0);
             _grpCgTs.Name = "_grpCgTs";
-            _grpCgTs.Size = new Size(170, 90);
+            _grpCgTs.Size = new Size(170, 76);
             _grpCgTs.TabIndex = 1;
             // 
             // _lblCgTs
@@ -706,7 +787,7 @@ namespace VisionEditCV
             _grpCgBr.Location = new Point(368, 0);
             _grpCgBr.Margin = new Padding(0, 0, 14, 0);
             _grpCgBr.Name = "_grpCgBr";
-            _grpCgBr.Size = new Size(170, 90);
+            _grpCgBr.Size = new Size(170, 76);
             _grpCgBr.TabIndex = 2;
             // 
             // _lblCgBr
@@ -740,7 +821,7 @@ namespace VisionEditCV
             _grpCgCo.Location = new Point(552, 0);
             _grpCgCo.Margin = new Padding(0, 0, 14, 0);
             _grpCgCo.Name = "_grpCgCo";
-            _grpCgCo.Size = new Size(170, 90);
+            _grpCgCo.Size = new Size(170, 76);
             _grpCgCo.TabIndex = 3;
             // 
             // _lblCgCo
@@ -753,7 +834,7 @@ namespace VisionEditCV
             _lblCgCo.Name = "_lblCgCo";
             _lblCgCo.Size = new Size(78, 15);
             _lblCgCo.TabIndex = 0;
-            _lblCgCo.Text = "Contrast ×0.1";
+            _lblCgCo.Text = "Contrast";
             // 
             // _cgContrast
             // 
@@ -770,11 +851,12 @@ namespace VisionEditCV
             // 
             _grpCgTb.BackColor = Color.Transparent;
             _grpCgTb.Controls.Add(_lblCgTb);
-            _grpCgTb.Controls.Add(_cgTargetBg);
+            _grpCgTb.Controls.Add(_btnCgFg);
+            _grpCgTb.Controls.Add(_btnCgBg);
             _grpCgTb.Location = new Point(736, 0);
             _grpCgTb.Margin = new Padding(0, 0, 14, 0);
             _grpCgTb.Name = "_grpCgTb";
-            _grpCgTb.Size = new Size(150, 90);
+            _grpCgTb.Size = new Size(200, 76);
             _grpCgTb.TabIndex = 5;
             // 
             // _lblCgTb
@@ -789,69 +871,201 @@ namespace VisionEditCV
             _lblCgTb.TabIndex = 0;
             _lblCgTb.Text = "Target";
             // 
-            // _cgTargetBg
-            // 
-            _cgTargetBg.AutoSize = true;
-            _cgTargetBg.BackColor = Color.Transparent;
-            _cgTargetBg.Font = new Font("Segoe UI", 9F);
-            _cgTargetBg.Location = new Point(0, 22);
-            _cgTargetBg.Name = "_cgTargetBg";
-            _cgTargetBg.Size = new Size(90, 19);
-            _cgTargetBg.TabIndex = 1;
-            _cgTargetBg.Text = "Background";
-            _cgTargetBg.UseVisualStyleBackColor = false;
-            // 
+            // _btnCgFg
+            //
+            _btnCgFg.BackColor = Color.FromArgb(0, 229, 255);
+            _btnCgFg.FlatAppearance.BorderSize = 0;
+            _btnCgFg.FlatStyle = FlatStyle.Flat;
+            _btnCgFg.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+            _btnCgFg.ForeColor = Color.FromArgb(13, 13, 13);
+            _btnCgFg.Location = new Point(0, 26);
+            _btnCgFg.Name = "_btnCgFg";
+            _btnCgFg.Size = new Size(92, 28);
+            _btnCgFg.TabIndex = 1;
+            _btnCgFg.Text = "Foreground";
+            _btnCgFg.UseVisualStyleBackColor = false;
+            //
+            // _btnCgBg
+            //
+            _btnCgBg.BackColor = Color.FromArgb(30, 32, 36);
+            _btnCgBg.FlatAppearance.BorderSize = 0;
+            _btnCgBg.FlatStyle = FlatStyle.Flat;
+            _btnCgBg.Font = new Font("Segoe UI", 8.5F);
+            _btnCgBg.ForeColor = Color.FromArgb(220, 220, 220);
+            _btnCgBg.Location = new Point(96, 26);
+            _btnCgBg.Name = "_btnCgBg";
+            _btnCgBg.Size = new Size(92, 28);
+            _btnCgBg.TabIndex = 2;
+            _btnCgBg.Text = "Background";
+            _btnCgBg.UseVisualStyleBackColor = false;
+            //
             // _panelArtistic
-            // 
+            //
             _panelArtistic.BackColor = Color.Transparent;
             _panelArtistic.Controls.Add(_artFlow);
             _panelArtistic.Dock = DockStyle.Fill;
             _panelArtistic.Location = new Point(16, 8);
             _panelArtistic.Name = "_panelArtistic";
-            _panelArtistic.Size = new Size(2028, 122);
+            _panelArtistic.Size = new Size(2028, 102);
             _panelArtistic.TabIndex = 1;
             _panelArtistic.Visible = false;
-            // 
+            //
             // _artFlow
-            // 
+            //
             _artFlow.BackColor = Color.Transparent;
-            _artFlow.Controls.Add(_grpArtInt);
+            _artFlow.Controls.Add(_grpArtMode);
+            _artFlow.Controls.Add(_grpArtSigmaS);
+            _artFlow.Controls.Add(_grpArtSigmaR);
+            _artFlow.Controls.Add(_grpArtShade);
             _artFlow.Dock = DockStyle.Fill;
             _artFlow.Location = new Point(0, 0);
             _artFlow.Name = "_artFlow";
-            _artFlow.Size = new Size(2028, 122);
+            _artFlow.Size = new Size(2028, 108);
             _artFlow.TabIndex = 0;
-            // 
-            // _grpArtInt
-            // 
-            _grpArtInt.BackColor = Color.Transparent;
-            _grpArtInt.Controls.Add(_lblArtInt);
-            _grpArtInt.Controls.Add(_artIntensity);
-            _grpArtInt.Location = new Point(0, 0);
-            _grpArtInt.Margin = new Padding(0, 0, 14, 0);
-            _grpArtInt.Name = "_grpArtInt";
-            _grpArtInt.Size = new Size(170, 90);
-            _grpArtInt.TabIndex = 0;
-            // 
-            // _lblArtInt
-            // 
-            _lblArtInt.AutoSize = true;
-            _lblArtInt.BackColor = Color.Transparent;
-            _lblArtInt.Font = new Font("Segoe UI", 8.5F);
-            _lblArtInt.ForeColor = Color.FromArgb(160, 165, 190);
-            _lblArtInt.Location = new Point(0, 0);
-            _lblArtInt.Name = "_lblArtInt";
-            _lblArtInt.Size = new Size(90, 15);
-            _lblArtInt.TabIndex = 0;
-            _lblArtInt.Text = "Sketch Intensity";
-            // 
-            // _artIntensity
-            // 
-            _artIntensity.BackColor = Color.FromArgb(18, 18, 18);
-            _artIntensity.Location = new Point(0, 24);
-            _artIntensity.Name = "_artIntensity";
-            _artIntensity.Size = new Size(160, 40);
-            _artIntensity.TabIndex = 1;
+            _artFlow.WrapContents = false;
+            //
+            // _grpArtMode
+            //
+            _grpArtMode.BackColor = Color.Transparent;
+            _grpArtMode.Controls.Add(_btnArtStylize);
+            _grpArtMode.Controls.Add(_btnArtPencil);
+            _grpArtMode.Location = new Point(0, 0);
+            _grpArtMode.Margin = new Padding(0, 0, 18, 0);
+            _grpArtMode.MinimumSize = new Size(164, 0);
+            _grpArtMode.Name = "_grpArtMode";
+            _grpArtMode.Size = new Size(164, 76);
+            _grpArtMode.TabIndex = 0;
+            //
+            // _btnArtStylize
+            //
+            _btnArtStylize.BackColor = Color.FromArgb(0, 229, 255);
+            _btnArtStylize.FlatAppearance.BorderSize = 0;
+            _btnArtStylize.FlatStyle = FlatStyle.Flat;
+            _btnArtStylize.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+            _btnArtStylize.ForeColor = Color.FromArgb(13, 13, 13);
+            _btnArtStylize.Location = new Point(0, 26);
+            _btnArtStylize.Name = "_btnArtStylize";
+            _btnArtStylize.Size = new Size(76, 28);
+            _btnArtStylize.TabIndex = 0;
+            _btnArtStylize.Text = "Stylize";
+            _btnArtStylize.UseVisualStyleBackColor = false;
+            //
+            // _btnArtPencil
+            //
+            _btnArtPencil.BackColor = Color.FromArgb(30, 32, 36);
+            _btnArtPencil.FlatAppearance.BorderSize = 0;
+            _btnArtPencil.FlatStyle = FlatStyle.Flat;
+            _btnArtPencil.Font = new Font("Segoe UI", 8.5F);
+            _btnArtPencil.ForeColor = Color.FromArgb(220, 220, 220);
+            _btnArtPencil.Location = new Point(82, 26);
+            _btnArtPencil.Name = "_btnArtPencil";
+            _btnArtPencil.Size = new Size(76, 28);
+            _btnArtPencil.TabIndex = 1;
+            _btnArtPencil.Text = "Pencil";
+            _btnArtPencil.UseVisualStyleBackColor = false;
+            //
+            // _grpArtSigmaS
+            //
+            _grpArtSigmaS.BackColor = Color.Transparent;
+            _grpArtSigmaS.Controls.Add(_lblArtSigmaS);
+            _grpArtSigmaS.Controls.Add(_artSigmaS);
+            _grpArtSigmaS.Location = new Point(0, 0);
+            _grpArtSigmaS.Margin = new Padding(0, 0, 14, 0);
+            _grpArtSigmaS.Name = "_grpArtSigmaS";
+            _grpArtSigmaS.Size = new Size(170, 76);
+            _grpArtSigmaS.TabIndex = 1;
+            //
+            // _lblArtSigmaS
+            //
+            _lblArtSigmaS.AutoSize = true;
+            _lblArtSigmaS.BackColor = Color.Transparent;
+            _lblArtSigmaS.Font = new Font("Segoe UI", 8.5F);
+            _lblArtSigmaS.ForeColor = Color.FromArgb(160, 165, 190);
+            _lblArtSigmaS.Location = new Point(0, 0);
+            _lblArtSigmaS.Name = "_lblArtSigmaS";
+            _lblArtSigmaS.Size = new Size(52, 15);
+            _lblArtSigmaS.TabIndex = 0;
+            _lblArtSigmaS.Text = "Sigma S";
+            //
+            // _artSigmaS
+            //
+            _artSigmaS.BackColor = Color.FromArgb(18, 18, 18);
+            _artSigmaS.Location = new Point(0, 24);
+            _artSigmaS.Maximum = 200;
+            _artSigmaS.Minimum = 1;
+            _artSigmaS.Name = "_artSigmaS";
+            _artSigmaS.Size = new Size(160, 40);
+            _artSigmaS.TabIndex = 1;
+            _artSigmaS.Value = 60;
+            //
+            // _grpArtSigmaR
+            //
+            _grpArtSigmaR.BackColor = Color.Transparent;
+            _grpArtSigmaR.Controls.Add(_lblArtSigmaR);
+            _grpArtSigmaR.Controls.Add(_artSigmaR);
+            _grpArtSigmaR.Location = new Point(0, 0);
+            _grpArtSigmaR.Margin = new Padding(0, 0, 14, 0);
+            _grpArtSigmaR.Name = "_grpArtSigmaR";
+            _grpArtSigmaR.Size = new Size(170, 76);
+            _grpArtSigmaR.TabIndex = 2;
+            //
+            // _lblArtSigmaR
+            //
+            _lblArtSigmaR.AutoSize = true;
+            _lblArtSigmaR.BackColor = Color.Transparent;
+            _lblArtSigmaR.Font = new Font("Segoe UI", 8.5F);
+            _lblArtSigmaR.ForeColor = Color.FromArgb(160, 165, 190);
+            _lblArtSigmaR.Location = new Point(0, 0);
+            _lblArtSigmaR.Name = "_lblArtSigmaR";
+            _lblArtSigmaR.Size = new Size(52, 15);
+            _lblArtSigmaR.TabIndex = 0;
+            _lblArtSigmaR.Text = "Sigma R";
+            //
+            // _artSigmaR
+            //
+            _artSigmaR.BackColor = Color.FromArgb(18, 18, 18);
+            _artSigmaR.Location = new Point(0, 24);
+            _artSigmaR.Maximum = 100;
+            _artSigmaR.Minimum = 1;
+            _artSigmaR.Name = "_artSigmaR";
+            _artSigmaR.Size = new Size(160, 40);
+            _artSigmaR.TabIndex = 1;
+            _artSigmaR.Value = 45;
+            //
+            // _grpArtShade
+            //
+            _grpArtShade.BackColor = Color.Transparent;
+            _grpArtShade.Controls.Add(_lblArtShade);
+            _grpArtShade.Controls.Add(_artShade);
+            _grpArtShade.Location = new Point(0, 0);
+            _grpArtShade.Margin = new Padding(0, 0, 14, 0);
+            _grpArtShade.Name = "_grpArtShade";
+            _grpArtShade.Size = new Size(170, 76);
+            _grpArtShade.TabIndex = 3;
+            _grpArtShade.Visible = false;
+            //
+            // _lblArtShade
+            //
+            _lblArtShade.AutoSize = true;
+            _lblArtShade.BackColor = Color.Transparent;
+            _lblArtShade.Font = new Font("Segoe UI", 8.5F);
+            _lblArtShade.ForeColor = Color.FromArgb(160, 165, 190);
+            _lblArtShade.Location = new Point(0, 0);
+            _lblArtShade.Name = "_lblArtShade";
+            _lblArtShade.Size = new Size(74, 15);
+            _lblArtShade.TabIndex = 0;
+            _lblArtShade.Text = "Shade Factor";
+            //
+            // _artShade
+            //
+            _artShade.BackColor = Color.FromArgb(18, 18, 18);
+            _artShade.Location = new Point(0, 24);
+            _artShade.Maximum = 100;
+            _artShade.Minimum = 1;
+            _artShade.Name = "_artShade";
+            _artShade.Size = new Size(160, 40);
+            _artShade.TabIndex = 1;
+            _artShade.Value = 5;
             // 
             // _panelSticker
             // 
@@ -876,8 +1090,9 @@ namespace VisionEditCV
             _stFlow.Dock = DockStyle.Fill;
             _stFlow.Location = new Point(0, 0);
             _stFlow.Name = "_stFlow";
-            _stFlow.Size = new Size(2028, 122);
+            _stFlow.Size = new Size(2028, 108);
             _stFlow.TabIndex = 0;
+            _stFlow.WrapContents = false;
             // 
             // _grpStSc
             // 
@@ -887,7 +1102,7 @@ namespace VisionEditCV
             _grpStSc.Location = new Point(0, 0);
             _grpStSc.Margin = new Padding(0, 0, 14, 0);
             _grpStSc.Name = "_grpStSc";
-            _grpStSc.Size = new Size(170, 90);
+            _grpStSc.Size = new Size(170, 76);
             _grpStSc.TabIndex = 0;
             // 
             // _lblStSc
@@ -921,7 +1136,7 @@ namespace VisionEditCV
             _grpStRot.Location = new Point(184, 0);
             _grpStRot.Margin = new Padding(0, 0, 14, 0);
             _grpStRot.Name = "_grpStRot";
-            _grpStRot.Size = new Size(170, 90);
+            _grpStRot.Size = new Size(170, 76);
             _grpStRot.TabIndex = 1;
             // 
             // _lblStRot
@@ -955,7 +1170,7 @@ namespace VisionEditCV
             _grpStBc.Location = new Point(368, 0);
             _grpStBc.Margin = new Padding(0, 0, 14, 0);
             _grpStBc.Name = "_grpStBc";
-            _grpStBc.Size = new Size(140, 90);
+            _grpStBc.Size = new Size(140, 76);
             _grpStBc.TabIndex = 2;
             // 
             // _lblStBc
@@ -985,7 +1200,7 @@ namespace VisionEditCV
             _grpStBt.Location = new Point(522, 0);
             _grpStBt.Margin = new Padding(0, 0, 14, 0);
             _grpStBt.Name = "_grpStBt";
-            _grpStBt.Size = new Size(170, 90);
+            _grpStBt.Size = new Size(170, 76);
             _grpStBt.TabIndex = 3;
             // 
             // _lblStBt
@@ -1019,7 +1234,7 @@ namespace VisionEditCV
             _grpStSh.Location = new Point(706, 0);
             _grpStSh.Margin = new Padding(0, 0, 14, 0);
             _grpStSh.Name = "_grpStSh";
-            _grpStSh.Size = new Size(170, 90);
+            _grpStSh.Size = new Size(170, 76);
             _grpStSh.TabIndex = 4;
             // 
             // _lblStSh
@@ -1049,16 +1264,17 @@ namespace VisionEditCV
             // 
             _grpStBg.BackColor = Color.Transparent;
             _grpStBg.Controls.Add(_lblStBg);
-            _grpStBg.Controls.Add(_rdoStickerOriginalBg);
-            _grpStBg.Controls.Add(_rdoStickerColorBg);
-            _grpStBg.Controls.Add(_rdoStickerImageBg);
-            _grpStBg.Controls.Add(_rdoStickerTransparentBg);
+            _grpStBg.Controls.Add(_btnStBgOriginal);
+            _grpStBg.Controls.Add(_btnStBgSolid);
+            _grpStBg.Controls.Add(_btnStBgImage);
+            _grpStBg.Controls.Add(_btnStBgTransparent);
             _grpStBg.Controls.Add(_stBgColorSwatch);
             _grpStBg.Controls.Add(_btnStickerUploadBg);
             _grpStBg.Location = new Point(890, 0);
             _grpStBg.Margin = new Padding(0, 0, 14, 0);
+            _grpStBg.MinimumSize = new Size(328, 0);
             _grpStBg.Name = "_grpStBg";
-            _grpStBg.Size = new Size(360, 90);
+            _grpStBg.Size = new Size(360, 76);
             _grpStBg.TabIndex = 5;
             // 
             // _lblStBg
@@ -1072,60 +1288,66 @@ namespace VisionEditCV
             _lblStBg.Size = new Size(71, 15);
             _lblStBg.TabIndex = 0;
             _lblStBg.Text = "Background";
-            // 
-            // _rdoStickerOriginalBg
-            // 
-            _rdoStickerOriginalBg.AutoSize = true;
-            _rdoStickerOriginalBg.BackColor = Color.Transparent;
-            _rdoStickerOriginalBg.Checked = true;
-            _rdoStickerOriginalBg.Font = new Font("Segoe UI", 8.5F);
-            _rdoStickerOriginalBg.Location = new Point(0, 18);
-            _rdoStickerOriginalBg.Name = "_rdoStickerOriginalBg";
-            _rdoStickerOriginalBg.Size = new Size(67, 19);
-            _rdoStickerOriginalBg.TabIndex = 1;
-            _rdoStickerOriginalBg.TabStop = true;
-            _rdoStickerOriginalBg.Text = "Original";
-            _rdoStickerOriginalBg.UseVisualStyleBackColor = false;
-            // 
-            // _rdoStickerColorBg
-            // 
-            _rdoStickerColorBg.AutoSize = true;
-            _rdoStickerColorBg.BackColor = Color.Transparent;
-            _rdoStickerColorBg.Font = new Font("Segoe UI", 8.5F);
-            _rdoStickerColorBg.Location = new Point(70, 18);
-            _rdoStickerColorBg.Name = "_rdoStickerColorBg";
-            _rdoStickerColorBg.Size = new Size(83, 19);
-            _rdoStickerColorBg.TabIndex = 2;
-            _rdoStickerColorBg.Text = "Solid Color";
-            _rdoStickerColorBg.UseVisualStyleBackColor = false;
-            // 
-            // _rdoStickerImageBg
-            // 
-            _rdoStickerImageBg.AutoSize = true;
-            _rdoStickerImageBg.BackColor = Color.Transparent;
-            _rdoStickerImageBg.Font = new Font("Segoe UI", 8.5F);
-            _rdoStickerImageBg.Location = new Point(148, 18);
-            _rdoStickerImageBg.Name = "_rdoStickerImageBg";
-            _rdoStickerImageBg.Size = new Size(99, 19);
-            _rdoStickerImageBg.TabIndex = 3;
-            _rdoStickerImageBg.Text = "Upload Image";
-            _rdoStickerImageBg.UseVisualStyleBackColor = false;
-            // 
-            // _rdoStickerTransparentBg
-            // 
-            _rdoStickerTransparentBg.AutoSize = true;
-            _rdoStickerTransparentBg.BackColor = Color.Transparent;
-            _rdoStickerTransparentBg.Font = new Font("Segoe UI", 8.5F);
-            _rdoStickerTransparentBg.Location = new Point(250, 18);
-            _rdoStickerTransparentBg.Name = "_rdoStickerTransparentBg";
-            _rdoStickerTransparentBg.Size = new Size(87, 19);
-            _rdoStickerTransparentBg.TabIndex = 6;
-            _rdoStickerTransparentBg.Text = "Transparent";
-            _rdoStickerTransparentBg.UseVisualStyleBackColor = false;
-            // 
+            //
+            // _btnStBgOriginal
+            //
+            _btnStBgOriginal.BackColor = Color.FromArgb(0, 229, 255);
+            _btnStBgOriginal.FlatAppearance.BorderSize = 0;
+            _btnStBgOriginal.FlatStyle = FlatStyle.Flat;
+            _btnStBgOriginal.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+            _btnStBgOriginal.ForeColor = Color.FromArgb(13, 13, 13);
+            _btnStBgOriginal.Location = new Point(0, 26);
+            _btnStBgOriginal.Name = "_btnStBgOriginal";
+            _btnStBgOriginal.Size = new Size(76, 28);
+            _btnStBgOriginal.TabIndex = 1;
+            _btnStBgOriginal.Text = "Original";
+            _btnStBgOriginal.UseVisualStyleBackColor = false;
+            //
+            // _btnStBgSolid
+            //
+            _btnStBgSolid.BackColor = Color.FromArgb(30, 32, 36);
+            _btnStBgSolid.FlatAppearance.BorderSize = 0;
+            _btnStBgSolid.FlatStyle = FlatStyle.Flat;
+            _btnStBgSolid.Font = new Font("Segoe UI", 8.5F);
+            _btnStBgSolid.ForeColor = Color.FromArgb(220, 220, 220);
+            _btnStBgSolid.Location = new Point(80, 26);
+            _btnStBgSolid.Name = "_btnStBgSolid";
+            _btnStBgSolid.Size = new Size(76, 28);
+            _btnStBgSolid.TabIndex = 2;
+            _btnStBgSolid.Text = "Solid Color";
+            _btnStBgSolid.UseVisualStyleBackColor = false;
+            //
+            // _btnStBgImage
+            //
+            _btnStBgImage.BackColor = Color.FromArgb(30, 32, 36);
+            _btnStBgImage.FlatAppearance.BorderSize = 0;
+            _btnStBgImage.FlatStyle = FlatStyle.Flat;
+            _btnStBgImage.Font = new Font("Segoe UI", 8.5F);
+            _btnStBgImage.ForeColor = Color.FromArgb(220, 220, 220);
+            _btnStBgImage.Location = new Point(160, 26);
+            _btnStBgImage.Name = "_btnStBgImage";
+            _btnStBgImage.Size = new Size(76, 28);
+            _btnStBgImage.TabIndex = 3;
+            _btnStBgImage.Text = "Upload";
+            _btnStBgImage.UseVisualStyleBackColor = false;
+            //
+            // _btnStBgTransparent
+            //
+            _btnStBgTransparent.BackColor = Color.FromArgb(30, 32, 36);
+            _btnStBgTransparent.FlatAppearance.BorderSize = 0;
+            _btnStBgTransparent.FlatStyle = FlatStyle.Flat;
+            _btnStBgTransparent.Font = new Font("Segoe UI", 8.5F);
+            _btnStBgTransparent.ForeColor = Color.FromArgb(220, 220, 220);
+            _btnStBgTransparent.Location = new Point(240, 26);
+            _btnStBgTransparent.Name = "_btnStBgTransparent";
+            _btnStBgTransparent.Size = new Size(76, 28);
+            _btnStBgTransparent.TabIndex = 4;
+            _btnStBgTransparent.Text = "Transparent";
+            _btnStBgTransparent.UseVisualStyleBackColor = false;
+            //
             // _stBgColorSwatch
-            // 
-            _stBgColorSwatch.Location = new Point(70, 42);
+            //
+            _stBgColorSwatch.Location = new Point(80, 0);
             _stBgColorSwatch.Name = "_stBgColorSwatch";
             _stBgColorSwatch.SelectedColor = Color.FromArgb(30, 30, 50);
             _stBgColorSwatch.Size = new Size(28, 22);
@@ -1134,9 +1356,10 @@ namespace VisionEditCV
             // 
             // _btnStickerUploadBg
             // 
+            _btnStickerUploadBg.FlatAppearance.BorderSize = 0;
             _btnStickerUploadBg.FlatStyle = FlatStyle.Flat;
-            _btnStickerUploadBg.Font = new Font("Segoe UI", 8F);
-            _btnStickerUploadBg.Location = new Point(148, 42);
+            _btnStickerUploadBg.Font = new Font("Segoe UI", 8.5F);
+            _btnStickerUploadBg.Location = new Point(160, 0);
             _btnStickerUploadBg.Name = "_btnStickerUploadBg";
             _btnStickerUploadBg.Size = new Size(80, 24);
             _btnStickerUploadBg.TabIndex = 5;
@@ -1176,7 +1399,7 @@ namespace VisionEditCV
             _grpPbMode.Location = new Point(0, 0);
             _grpPbMode.Margin = new Padding(0, 0, 14, 0);
             _grpPbMode.Name = "_grpPbMode";
-            _grpPbMode.Size = new Size(170, 90);
+            _grpPbMode.Size = new Size(170, 76);
             _grpPbMode.TabIndex = 0;
             // 
             // _lblPbMode
@@ -1193,9 +1416,12 @@ namespace VisionEditCV
             // 
             // _btnPixelMode
             // 
+            _btnPixelMode.BackColor = Color.FromArgb(0, 229, 255);
+            _btnPixelMode.ForeColor = Color.FromArgb(13, 13, 13);
+            _btnPixelMode.FlatAppearance.BorderSize = 0;
             _btnPixelMode.FlatStyle = FlatStyle.Flat;
-            _btnPixelMode.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
-            _btnPixelMode.Location = new Point(0, 24);
+            _btnPixelMode.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+            _btnPixelMode.Location = new Point(0, 26);
             _btnPixelMode.Margin = new Padding(0, 0, 4, 0);
             _btnPixelMode.Name = "_btnPixelMode";
             _btnPixelMode.Size = new Size(70, 28);
@@ -1204,9 +1430,12 @@ namespace VisionEditCV
             // 
             // _btnBlurMode
             // 
+            _btnBlurMode.BackColor = Color.FromArgb(30, 32, 36);
+            _btnBlurMode.ForeColor = Color.FromArgb(220, 220, 220);
+            _btnBlurMode.FlatAppearance.BorderSize = 0;
             _btnBlurMode.FlatStyle = FlatStyle.Flat;
-            _btnBlurMode.Font = new Font("Segoe UI", 8F);
-            _btnBlurMode.Location = new Point(74, 20);
+            _btnBlurMode.Font = new Font("Segoe UI", 8.5F);
+            _btnBlurMode.Location = new Point(74, 26);
             _btnBlurMode.Name = "_btnBlurMode";
             _btnBlurMode.Size = new Size(52, 28);
             _btnBlurMode.TabIndex = 2;
@@ -1220,7 +1449,7 @@ namespace VisionEditCV
             _grpPbInt.Location = new Point(184, 0);
             _grpPbInt.Margin = new Padding(0, 0, 14, 0);
             _grpPbInt.Name = "_grpPbInt";
-            _grpPbInt.Size = new Size(170, 90);
+            _grpPbInt.Size = new Size(170, 76);
             _grpPbInt.TabIndex = 1;
             // 
             // _lblPbInt
@@ -1254,7 +1483,7 @@ namespace VisionEditCV
             _grpPbTarget.Location = new Point(368, 0);
             _grpPbTarget.Margin = new Padding(0, 0, 14, 0);
             _grpPbTarget.Name = "_grpPbTarget";
-            _grpPbTarget.Size = new Size(200, 90);
+            _grpPbTarget.Size = new Size(200, 76);
             _grpPbTarget.TabIndex = 2;
             // 
             // _lblPbTarget
@@ -1271,9 +1500,12 @@ namespace VisionEditCV
             // 
             // _btnPbForeground
             // 
+            _btnPbForeground.BackColor = Color.FromArgb(0, 229, 255);
+            _btnPbForeground.ForeColor = Color.FromArgb(13, 13, 13);
+            _btnPbForeground.FlatAppearance.BorderSize = 0;
             _btnPbForeground.FlatStyle = FlatStyle.Flat;
-            _btnPbForeground.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
-            _btnPbForeground.Location = new Point(0, 24);
+            _btnPbForeground.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+            _btnPbForeground.Location = new Point(0, 26);
             _btnPbForeground.Margin = new Padding(0, 0, 4, 0);
             _btnPbForeground.Name = "_btnPbForeground";
             _btnPbForeground.Size = new Size(80, 28);
@@ -1282,9 +1514,12 @@ namespace VisionEditCV
             // 
             // _btnPbBackground
             // 
+            _btnPbBackground.BackColor = Color.FromArgb(30, 32, 36);
+            _btnPbBackground.ForeColor = Color.FromArgb(220, 220, 220);
+            _btnPbBackground.FlatAppearance.BorderSize = 0;
             _btnPbBackground.FlatStyle = FlatStyle.Flat;
-            _btnPbBackground.Font = new Font("Segoe UI", 8F);
-            _btnPbBackground.Location = new Point(84, 20);
+            _btnPbBackground.Font = new Font("Segoe UI", 8.5F);
+            _btnPbBackground.Location = new Point(84, 26);
             _btnPbBackground.Name = "_btnPbBackground";
             _btnPbBackground.Size = new Size(80, 28);
             _btnPbBackground.TabIndex = 2;
@@ -1321,7 +1556,7 @@ namespace VisionEditCV
             _grpPtBlur.Location = new Point(0, 0);
             _grpPtBlur.Margin = new Padding(0, 0, 14, 0);
             _grpPtBlur.Name = "_grpPtBlur";
-            _grpPtBlur.Size = new Size(170, 90);
+            _grpPtBlur.Size = new Size(170, 76);
             _grpPtBlur.TabIndex = 0;
             // 
             // _lblPtBlur
@@ -1355,7 +1590,7 @@ namespace VisionEditCV
             _grpPtFeather.Location = new Point(184, 0);
             _grpPtFeather.Margin = new Padding(0, 0, 14, 0);
             _grpPtFeather.Name = "_grpPtFeather";
-            _grpPtFeather.Size = new Size(170, 90);
+            _grpPtFeather.Size = new Size(170, 76);
             _grpPtFeather.TabIndex = 1;
             // 
             // _lblPtFeather
@@ -1398,22 +1633,24 @@ namespace VisionEditCV
             _gsFlow.Dock = DockStyle.Fill;
             _gsFlow.Location = new Point(0, 0);
             _gsFlow.Name = "_gsFlow";
-            _gsFlow.Size = new Size(2028, 122);
+            _gsFlow.Size = new Size(2028, 108);
             _gsFlow.TabIndex = 0;
+            _gsFlow.WrapContents = false;
             // 
             // _grpGsTb
             // 
             _grpGsTb.BackColor = Color.Transparent;
             _grpGsTb.Controls.Add(_lblGsTb);
-            _grpGsTb.Controls.Add(_gsTargetBg);
+            _grpGsTb.Controls.Add(_btnGsFg);
+            _grpGsTb.Controls.Add(_btnGsBg);
             _grpGsTb.Location = new Point(0, 0);
             _grpGsTb.Margin = new Padding(0, 0, 14, 0);
             _grpGsTb.Name = "_grpGsTb";
-            _grpGsTb.Size = new Size(150, 90);
+            _grpGsTb.Size = new Size(190, 76);
             _grpGsTb.TabIndex = 0;
-            // 
+            //
             // _lblGsTb
-            // 
+            //
             _lblGsTb.AutoSize = true;
             _lblGsTb.BackColor = Color.Transparent;
             _lblGsTb.Font = new Font("Segoe UI", 8.5F);
@@ -1423,24 +1660,42 @@ namespace VisionEditCV
             _lblGsTb.Size = new Size(40, 15);
             _lblGsTb.TabIndex = 0;
             _lblGsTb.Text = "Target";
-            // 
-            // _gsTargetBg
-            // 
-            _gsTargetBg.AutoSize = true;
-            _gsTargetBg.BackColor = Color.Transparent;
-            _gsTargetBg.Font = new Font("Segoe UI", 9F);
-            _gsTargetBg.Location = new Point(0, 22);
-            _gsTargetBg.Name = "_gsTargetBg";
-            _gsTargetBg.Size = new Size(90, 19);
-            _gsTargetBg.TabIndex = 1;
-            _gsTargetBg.Text = "Background";
-            _gsTargetBg.UseVisualStyleBackColor = false;
+            //
+            // _btnGsFg
+            //
+            _btnGsFg.BackColor = Color.FromArgb(0, 229, 255);
+            _btnGsFg.FlatAppearance.BorderSize = 0;
+            _btnGsFg.FlatStyle = FlatStyle.Flat;
+            _btnGsFg.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+            _btnGsFg.ForeColor = Color.FromArgb(13, 13, 13);
+            _btnGsFg.Location = new Point(0, 26);
+            _btnGsFg.Name = "_btnGsFg";
+            _btnGsFg.Size = new Size(86, 28);
+            _btnGsFg.TabIndex = 1;
+            _btnGsFg.Text = "Foreground";
+            _btnGsFg.UseVisualStyleBackColor = false;
+            //
+            // _btnGsBg
+            //
+            _btnGsBg.BackColor = Color.FromArgb(30, 32, 36);
+            _btnGsBg.FlatAppearance.BorderSize = 0;
+            _btnGsBg.FlatStyle = FlatStyle.Flat;
+            _btnGsBg.Font = new Font("Segoe UI", 8.5F);
+            _btnGsBg.ForeColor = Color.FromArgb(220, 220, 220);
+            _btnGsBg.Location = new Point(90, 26);
+            _btnGsBg.Name = "_btnGsBg";
+            _btnGsBg.Size = new Size(86, 28);
+            _btnGsBg.TabIndex = 2;
+            _btnGsBg.Text = "Background";
+            _btnGsBg.UseVisualStyleBackColor = false;
             // 
             // _btnApplyEffect
             // 
             _btnApplyEffect.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             _btnApplyEffect.BackColor = Color.FromArgb(14, 48, 52);
+            _btnApplyEffect.ForeColor = Color.FromArgb(0, 229, 255);
             _btnApplyEffect.FlatAppearance.BorderSize = 2;
+            _btnApplyEffect.FlatAppearance.BorderColor = Color.FromArgb(0, 229, 255);
             _btnApplyEffect.FlatStyle = FlatStyle.Flat;
             _btnApplyEffect.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             _btnApplyEffect.Location = new Point(1860, 70);
@@ -1450,7 +1705,24 @@ namespace VisionEditCV
             _btnApplyEffect.Text = "Apply";
             _btnApplyEffect.UseVisualStyleBackColor = false;
             _btnApplyEffect.Visible = false;
-            // 
+            //
+            // _btnResetEffect
+            //
+            _btnResetEffect.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            _btnResetEffect.BackColor = Color.FromArgb(30, 32, 36);
+            _btnResetEffect.ForeColor = Color.FromArgb(160, 165, 190);
+            _btnResetEffect.FlatAppearance.BorderSize = 1;
+            _btnResetEffect.FlatAppearance.BorderColor = Color.FromArgb(70, 75, 95);
+            _btnResetEffect.FlatStyle = FlatStyle.Flat;
+            _btnResetEffect.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            _btnResetEffect.Location = new Point(1860, 10);
+            _btnResetEffect.Name = "_btnResetEffect";
+            _btnResetEffect.Size = new Size(120, 44);
+            _btnResetEffect.TabIndex = 7;
+            _btnResetEffect.Text = "Reset";
+            _btnResetEffect.UseVisualStyleBackColor = false;
+            _btnResetEffect.Visible = false;
+            //
             // _appliedEffectsPanel
             // 
             _appliedEffectsPanel.BackColor = Color.Transparent;
@@ -1465,7 +1737,7 @@ namespace VisionEditCV
             // 
             // _lblSelMode
             // 
-            _lblSelMode.Anchor = AnchorStyles.Left;
+            _lblSelMode.Anchor = AnchorStyles.None;
             _lblSelMode.BackColor = Color.Transparent;
             _lblSelMode.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             _lblSelMode.ForeColor = Color.FromArgb(160, 165, 190);
@@ -1473,17 +1745,18 @@ namespace VisionEditCV
             _lblSelMode.Name = "_lblSelMode";
             _lblSelMode.Size = new Size(130, 42);
             _lblSelMode.TabIndex = 0;
-            _lblSelMode.Text = "Selection Mode";
-            _lblSelMode.TextAlign = ContentAlignment.MiddleRight;
+            _lblSelMode.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            _lblSelMode.Text = "⊞";
+            _lblSelMode.TextAlign = ContentAlignment.MiddleCenter;
             _lblSelMode.Click += _lblSelMode_Click_1;
             // 
             // _btnBBox
             // 
-            _btnBBox.Anchor = AnchorStyles.Left;
-            _btnBBox.BackColor = Color.Transparent;
+            _btnBBox.Anchor = AnchorStyles.None;
+            _btnBBox.BackColor = Color.FromArgb(30, 32, 36);
             _btnBBox.FlatAppearance.BorderSize = 0;
             _btnBBox.FlatStyle = FlatStyle.Flat;
-            _btnBBox.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            _btnBBox.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             _btnBBox.Location = new Point(452, 12);
             _btnBBox.Name = "_btnBBox";
             _btnBBox.Size = new Size(155, 42);
@@ -1493,11 +1766,11 @@ namespace VisionEditCV
             // 
             // _btnPrompt
             // 
-            _btnPrompt.Anchor = AnchorStyles.Left;
-            _btnPrompt.BackColor = Color.Transparent;
+            _btnPrompt.Anchor = AnchorStyles.None;
+            _btnPrompt.BackColor = Color.FromArgb(30, 32, 36);
             _btnPrompt.FlatAppearance.BorderSize = 0;
             _btnPrompt.FlatStyle = FlatStyle.Flat;
-            _btnPrompt.Font = new Font("Segoe UI", 10F);
+            _btnPrompt.Font = new Font("Segoe UI", 9.5F);
             _btnPrompt.Location = new Point(628, 9);
             _btnPrompt.Name = "_btnPrompt";
             _btnPrompt.Size = new Size(110, 42);
@@ -1507,7 +1780,7 @@ namespace VisionEditCV
             // 
             // _promptBox
             // 
-            _promptBox.Anchor = AnchorStyles.Left;
+            _promptBox.Anchor = AnchorStyles.None;
             _promptBox.BackColor = Color.FromArgb(30, 32, 36);
             _promptBox.BorderColor = Color.FromArgb(0, 229, 255);
             _promptBox.Font = new Font("Segoe UI", 10.5F);
@@ -1521,12 +1794,12 @@ namespace VisionEditCV
             // 
             // _btnSegment
             // 
-            _btnSegment.Anchor = AnchorStyles.Left;
+            _btnSegment.Anchor = AnchorStyles.None;
             _btnSegment.BackColor = Color.FromArgb(0, 150, 255);
             _btnSegment.FlatStyle = FlatStyle.Flat;
             _btnSegment.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             _btnSegment.ForeColor = Color.White;
-            _btnSegment.Icon = "🔍";
+            _btnSegment.Icon = "⊙";
             _btnSegment.Location = new Point(1446, 9);
             _btnSegment.Name = "_btnSegment";
             _btnSegment.Size = new Size(135, 42);
@@ -1588,21 +1861,39 @@ namespace VisionEditCV
             // 
             // label1
             // 
-            label1.Anchor = AnchorStyles.Left;
+            label1.Anchor = AnchorStyles.None;
             label1.BackColor = Color.Transparent;
-            label1.Font = new Font("Segoe UI", 14.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label1.ForeColor = Color.FromArgb(160, 165, 190);
+            label1.Font = new Font("Segoe UI", 13F, FontStyle.Bold);
+            label1.ForeColor = Color.FromArgb(0, 229, 255);
             label1.Location = new Point(12, 9);
             label1.Name = "label1";
-            label1.Size = new Size(130, 42);
+            label1.Size = new Size(148, 42);
             label1.TabIndex = 7;
-            label1.Text = "Vision Edit";
-            label1.TextAlign = ContentAlignment.MiddleRight;
+            label1.Text = "◈  VisionEdit";
+            label1.TextAlign = ContentAlignment.MiddleLeft;
             label1.Click += label1_Click;
             // 
+            //
+            // _btnChangeImage
+            //
+            _btnChangeImage.BackColor = Color.FromArgb(30, 32, 36);
+            _btnChangeImage.Dock = DockStyle.Bottom;
+            _btnChangeImage.FlatAppearance.BorderSize = 0;
+            _btnChangeImage.FlatStyle = FlatStyle.Flat;
+            _btnChangeImage.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            _btnChangeImage.ForeColor = Color.FromArgb(220, 220, 220);
+            _btnChangeImage.Icon = "↩";
+            _btnChangeImage.Name = "_btnChangeImage";
+            _btnChangeImage.Padding = new Padding(8, 0, 0, 0);
+            _btnChangeImage.Size = new Size(180, 44);
+            _btnChangeImage.TabIndex = 8;
+            _btnChangeImage.Text = "Change Image";
+            _btnChangeImage.TextAlign = ContentAlignment.MiddleLeft;
+            _btnChangeImage.UseVisualStyleBackColor = false;
+            //
             // _btnStartServer
-            // 
-            _btnStartServer.Anchor = AnchorStyles.Right;
+            //
+            _btnStartServer.Anchor = AnchorStyles.None;
             _btnStartServer.BackColor = Color.FromArgb(0, 160, 80);
             _btnStartServer.FlatAppearance.BorderSize = 0;
             _btnStartServer.FlatStyle = FlatStyle.Flat;
@@ -1612,6 +1903,7 @@ namespace VisionEditCV
             _btnStartServer.Name = "_btnStartServer";
             _btnStartServer.Size = new Size(175, 42);
             _btnStartServer.TabIndex = 5;
+            _btnStartServer.Icon = "▶";
             _btnStartServer.Text = "Start Server";
             _btnStartServer.UseVisualStyleBackColor = false;
             // 
@@ -1628,11 +1920,12 @@ namespace VisionEditCV
             // _bottomContainer
             // 
             _bottomContainer.BackColor = Color.FromArgb(18, 18, 18);
+            _bottomContainer.Controls.Add(_controlsLabel);
             _bottomContainer.Controls.Add(_effectSubPanel);
             _bottomContainer.Dock = DockStyle.Bottom;
             _bottomContainer.Location = new Point(0, 781);
             _bottomContainer.Name = "_bottomContainer";
-            _bottomContainer.Size = new Size(2060, 170);
+            _bottomContainer.Size = new Size(2060, 120);
             _bottomContainer.TabIndex = 3;
             // 
             // _btnResetAll
@@ -1679,26 +1972,12 @@ namespace VisionEditCV
             _canvas.AllowDrop = true;
             _canvas.BackColor = Color.FromArgb(13, 13, 13);
             _canvas.Controls.Add(_loadingOverlay);
-            _canvas.Controls.Add(_btnChangeImage);
             _canvas.Dock = DockStyle.Fill;
             _canvas.Location = new Point(24, 24);
             _canvas.Name = "_canvas";
             _canvas.Size = new Size(1548, 673);
             _canvas.TabIndex = 0;
-            // 
-            // _btnChangeImage
-            // 
-            _btnChangeImage.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            _btnChangeImage.BackColor = Color.FromArgb(50, 50, 80);
-            _btnChangeImage.FlatStyle = FlatStyle.Flat;
-            _btnChangeImage.Font = new Font("Segoe UI", 8.5F);
-            _btnChangeImage.Location = new Point(2208, 6);
-            _btnChangeImage.Name = "_btnChangeImage";
-            _btnChangeImage.Size = new Size(120, 30);
-            _btnChangeImage.TabIndex = 1;
-            _btnChangeImage.Text = "Change Image";
-            _btnChangeImage.UseVisualStyleBackColor = false;
-            // 
+            //
             // _centerPanel
             // 
             _centerPanel.BackColor = Color.FromArgb(13, 13, 13);
@@ -1739,11 +2018,15 @@ namespace VisionEditCV
             _grpCgCo.ResumeLayout(false);
             _grpCgCo.PerformLayout();
             _grpCgTb.ResumeLayout(false);
-            _grpCgTb.PerformLayout();
             _panelArtistic.ResumeLayout(false);
             _artFlow.ResumeLayout(false);
-            _grpArtInt.ResumeLayout(false);
-            _grpArtInt.PerformLayout();
+            _grpArtMode.ResumeLayout(false);
+            _grpArtSigmaS.ResumeLayout(false);
+            _grpArtSigmaS.PerformLayout();
+            _grpArtSigmaR.ResumeLayout(false);
+            _grpArtSigmaR.PerformLayout();
+            _grpArtShade.ResumeLayout(false);
+            _grpArtShade.PerformLayout();
             _panelSticker.ResumeLayout(false);
             _stFlow.ResumeLayout(false);
             _grpStSc.ResumeLayout(false);
@@ -1775,7 +2058,6 @@ namespace VisionEditCV
             _panelGrayscale.ResumeLayout(false);
             _gsFlow.ResumeLayout(false);
             _grpGsTb.ResumeLayout(false);
-            _grpGsTb.PerformLayout();
             _serverPanel.ResumeLayout(false);
             _serverPanel.PerformLayout();
             _topBar.ResumeLayout(false);

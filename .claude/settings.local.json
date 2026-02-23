@@ -3,7 +3,9 @@
     "allow": [
       "Bash(cd \"D:\\\\KMITL\\\\2.2\\\\Computer-Vision\\\\py-code\\\\VisionEditCV\" && dotnet build 2>&1)",
       "Bash(tail:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(grep:*)",
+      "Bash(grep error CS:*)"
     ]
   }
 }

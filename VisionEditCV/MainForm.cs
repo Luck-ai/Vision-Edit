@@ -29,8 +29,13 @@ namespace VisionEditCV
         private string _activeEffect = "";
         private bool _comparingOriginal = false;
         private bool _pixelateMode = true;
+        private bool _artStylizeMode = true;
         private bool _pbTargetBg = false;
+        private bool _gsTargetBgMode = false;
+        private bool _cgTargetBgMode = false;
+        private string _stickerBgMode = "Original"; // "Original" | "Solid" | "Image" | "Transparent"
         private Bitmap? _stickerCustomBg = null;
+        private volatile bool _previewRunning = false;
 
         // ── Applied effects tracking ─────────────────────────────────────────
         private readonly List<string> _appliedEffects = new();
@@ -56,6 +61,9 @@ namespace VisionEditCV
 
             WireEvents();
             WireResizeHandlers();
+            // Run initial layout passes
+            TopBarResize(_topBar, EventArgs.Empty);
+            EffectSubPanelResize(_effectSubPanel, EventArgs.Empty);
             // Establish initial bottom-bar state: BBox active, prompt hidden
             SetCanvasMode(CanvasMode.BoundingBox);
 
@@ -69,8 +77,9 @@ namespace VisionEditCV
 
         private void WireEvents()
         {
-            // Image loading
+            // Image loading / mask management
             _btnChangeImage.Click += (s, e) => OpenImageFile();
+            _btnClearMasks.Click += (s, e) => ClearAllMasks();
             _canvas.ImageDropped += (s, e) => OnImageLoaded();
             _canvas.Click += (s, e) =>
             {
@@ -85,8 +94,9 @@ namespace VisionEditCV
             _btnPortrait.Click += (s, e) => ActivateEffect("Portrait");
             _btnGrayscale.Click += (s, e) => ActivateEffect("Grayscale");
 
-            // Apply effect — commits preview as new working image
+            // Apply / Reset effect
             _btnApplyEffect.Click += (s, e) => ApplyCurrentEffect();
+            _btnResetEffect.Click  += (s, e) => ResetCurrentEffect();
 
             // Reset all applied effects
             _btnResetAll.Click += (s, e) => ResetAllEffects();
@@ -129,11 +139,16 @@ namespace VisionEditCV
             WireSlider(_cgTintStrength);
             WireSlider(_cgBrightness);
             WireSlider(_cgContrast);
-            _cgTargetBg.CheckedChanged += (s, e) => TriggerLivePreview();
+            _btnCgFg.Click += (s, e) => SetCgMode(targetBg: false);
+            _btnCgBg.Click += (s, e) => SetCgMode(targetBg: true);
             _cgTintSwatch.ColorChanged += (s, e) => TriggerLivePreview();
 
             // ── Artistic ──────────────────────────────────────────────────────
-            WireSlider(_artIntensity);
+            WireSlider(_artSigmaS);
+            WireSlider(_artSigmaR);
+            WireSlider(_artShade);
+            _btnArtStylize.Click += (s, e) => SetArtMode(stylize: true);
+            _btnArtPencil.Click  += (s, e) => SetArtMode(stylize: false);
 
             // ── Sticker ───────────────────────────────────────────────────────
             WireSlider(_stScale);
@@ -142,20 +157,10 @@ namespace VisionEditCV
             WireSlider(_stShadowBlur);
             _stBorderColor.ColorChanged += (s, e) => TriggerLivePreview();
 
-            _rdoStickerOriginalBg.CheckedChanged += (s, e) => TriggerLivePreview();
-            _rdoStickerColorBg.CheckedChanged += (s, e) =>
-            {
-                _stBgColorSwatch.Visible = _rdoStickerColorBg.Checked;
-                _btnStickerUploadBg.Visible = false;
-                TriggerLivePreview();
-            };
-            _rdoStickerImageBg.CheckedChanged += (s, e) =>
-            {
-                _btnStickerUploadBg.Visible = _rdoStickerImageBg.Checked;
-                _stBgColorSwatch.Visible = false;
-                TriggerLivePreview();
-            };
-            _rdoStickerTransparentBg.CheckedChanged += (s, e) => TriggerLivePreview();
+            _btnStBgOriginal.Click    += (s, e) => SetStickerBgMode("Original");
+            _btnStBgSolid.Click       += (s, e) => SetStickerBgMode("Solid");
+            _btnStBgImage.Click       += (s, e) => SetStickerBgMode("Image");
+            _btnStBgTransparent.Click += (s, e) => SetStickerBgMode("Transparent");
             _stBgColorSwatch.ColorChanged += (s, e) => TriggerLivePreview();
             _btnStickerUploadBg.Click += (s, e) => PickStickerBackground();
 
@@ -164,7 +169,8 @@ namespace VisionEditCV
             WireSlider(_ptFeatherAmount);
 
             // ── Grayscale ─────────────────────────────────────────────────────
-            _gsTargetBg.CheckedChanged += (s, e) => TriggerLivePreview();
+            _btnGsFg.Click += (s, e) => SetGsMode(targetBg: false);
+            _btnGsBg.Click += (s, e) => SetGsMode(targetBg: true);
 
             // ── PixelBlur ─────────────────────────────────────────────────────
             _btnPixelMode.Click += (s, e) =>
@@ -225,6 +231,13 @@ namespace VisionEditCV
                 _txtServerUrl.Width = w;
                 _lblServerStatus.Width = w;
             };
+
+            // Re-run layout after the form is fully rendered (sizes are finalised)
+            Shown += (s, e) => BeginInvoke(() =>
+            {
+                EffectSubPanelResize(_effectSubPanel, EventArgs.Empty);
+                TopBarResize(_topBar, EventArgs.Empty);
+            });
         }
 
         private void WireSlider(SliderControl sc)
@@ -253,6 +266,14 @@ namespace VisionEditCV
                 RebuildAppliedEffectsChips();
                 OnImageLoaded();
             }
+        }
+
+        private void ClearAllMasks()
+        {
+            _maskList.ClearRows();
+            _lastResult = null;
+            _canvas.ClearMasks();
+            _rightPanel.Visible = false;
         }
 
         private void OnImageLoaded()
@@ -364,12 +385,88 @@ namespace VisionEditCV
         //  Logic – Effect activation
         // ═════════════════════════════════════════════════════════════════════
 
+        private void SetArtMode(bool stylize)
+        {
+            _artStylizeMode = stylize;
+            _btnArtStylize.BackColor = stylize ? _Cyan : _BgButton;
+            _btnArtStylize.ForeColor = stylize ? _BgMain : _TextMain;
+            _btnArtPencil.BackColor  = stylize ? _BgButton : _Cyan;
+            _btnArtPencil.ForeColor  = stylize ? _TextMain : _BgMain;
+            _grpArtSigmaR.Visible = stylize;
+            _grpArtShade.Visible  = !stylize;
+            TriggerLivePreview();
+        }
+
+        private void SetStickerBgMode(string mode)
+        {
+            _stickerBgMode = mode;
+            // Update button visuals
+            _btnStBgOriginal.BackColor    = mode == "Original"    ? _Cyan : _BgButton;
+            _btnStBgOriginal.ForeColor    = mode == "Original"    ? _BgMain : _TextMain;
+            _btnStBgSolid.BackColor       = mode == "Solid"       ? _Cyan : _BgButton;
+            _btnStBgSolid.ForeColor       = mode == "Solid"       ? _BgMain : _TextMain;
+            _btnStBgImage.BackColor       = mode == "Image"       ? _Cyan : _BgButton;
+            _btnStBgImage.ForeColor       = mode == "Image"       ? _BgMain : _TextMain;
+            _btnStBgTransparent.BackColor = mode == "Transparent" ? _Cyan : _BgButton;
+            _btnStBgTransparent.ForeColor = mode == "Transparent" ? _BgMain : _TextMain;
+            // Show/hide secondary controls
+            _stBgColorSwatch.Visible    = mode == "Solid";
+            _btnStickerUploadBg.Visible = mode == "Image";
+            TriggerLivePreview();
+        }
+
+        private void SetCgMode(bool targetBg)
+        {
+            _cgTargetBgMode = targetBg;
+            _btnCgFg.BackColor = !targetBg ? _Cyan : _BgButton;
+            _btnCgFg.ForeColor = !targetBg ? _BgMain : _TextMain;
+            _btnCgBg.BackColor = targetBg  ? _Cyan : _BgButton;
+            _btnCgBg.ForeColor = targetBg  ? _BgMain : _TextMain;
+            TriggerLivePreview();
+        }
+
+        private void SetGsMode(bool targetBg)
+        {
+            _gsTargetBgMode = targetBg;
+            _btnGsFg.BackColor = !targetBg ? _Cyan : _BgButton;
+            _btnGsFg.ForeColor = !targetBg ? _BgMain : _TextMain;
+            _btnGsBg.BackColor = targetBg  ? _Cyan : _BgButton;
+            _btnGsBg.ForeColor = targetBg  ? _BgMain : _TextMain;
+            TriggerLivePreview();
+        }
+
+        private void DeactivateEffect()
+        {
+            _activeEffect = "";
+            foreach (var btn in new[] { _btnColorGrading, _btnArtisticStyle,
+                                         _btnStickerGen, _btnPixelBlur, _btnPortrait, _btnGrayscale })
+            {
+                btn.BackColor = _BgButton;
+                btn.ForeColor = _TextMain;
+                btn.FlatAppearance.BorderSize = 0;
+                btn.FlatAppearance.BorderColor = _BgButton;
+            }
+            foreach (var p in new[] { _panelColorGrading, _panelArtistic,
+                                       _panelSticker, _panelPixelBlur, _panelPortrait, _panelGrayscale })
+                p.Visible = false;
+            _lblNoEffect.Visible = true;
+            _btnApplyEffect.Visible = false;
+            _btnResetEffect.Visible = false;
+        }
+
         private void ActivateEffect(string effect)
         {
             if (_canvas.OriginalBitmap == null)
             {
                 MessageBox.Show("Please load an image before selecting an effect.",
                     "No Image", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Clicking the already-active effect deselects it
+            if (_activeEffect == effect)
+            {
+                DeactivateEffect();
                 return;
             }
 
@@ -424,7 +521,12 @@ namespace VisionEditCV
             _lblNoEffect.Visible = activePanel == null;
 
             // Show Apply button for all real effects
-            _btnApplyEffect.Visible = activePanel != null;
+            bool showButtons = activePanel != null;
+            _btnApplyEffect.Visible = showButtons;
+            _btnResetEffect.Visible = showButtons;
+
+            // Re-run proportional layout now that a panel is visible
+            if (showButtons) EffectSubPanelResize(_effectSubPanel, EventArgs.Empty);
 
             TriggerLivePreview();
         }
@@ -432,6 +534,46 @@ namespace VisionEditCV
         // ═════════════════════════════════════════════════════════════════════
         //  Logic – Apply effect (commit preview as new working image)
         // ═════════════════════════════════════════════════════════════════════
+
+        private void ResetCurrentEffect()
+        {
+            switch (_activeEffect)
+            {
+                case "ColorGrading":
+                    _cgTintStrength.Value = 0;
+                    _cgBrightness.Value   = 0;
+                    _cgContrast.Value     = 10;
+                    SetCgMode(targetBg: false);
+                    break;
+                case "Artistic":
+                    _artSigmaS.Value = 60;
+                    _artSigmaR.Value = 45;
+                    _artShade.Value  = 5;
+                    SetArtMode(stylize: true);
+                    break;
+                case "Sticker":
+                    _stScale.Value    = 10;
+                    _stRotation.Value = 0;
+                    _stThickness.Value = 15;
+                    _stShadowBlur.Value = 15;
+                    SetStickerBgMode("Original");
+                    break;
+                case "PixelBlur":
+                    _pbIntensity.Value = 40;
+                    _pixelateMode = true;
+                    _btnPixelMode.BackColor = _Cyan; _btnPixelMode.ForeColor = _BgMain;
+                    _btnBlurMode.BackColor = _BgButton; _btnBlurMode.ForeColor = _TextMain;
+                    break;
+                case "Portrait":
+                    _ptBlurStrength.Value   = 51;
+                    _ptFeatherAmount.Value  = 21;
+                    break;
+                case "Grayscale":
+                    SetGsMode(targetBg: false);
+                    break;
+            }
+            TriggerLivePreview();
+        }
 
         private void ApplyCurrentEffect()
         {
@@ -478,6 +620,12 @@ namespace VisionEditCV
         //  Logic – Async debounced preview
         // ═════════════════════════════════════════════════════════════════════
 
+        // Effects that are computationally heavy — use a downscaled image for preview
+        private static readonly HashSet<string> _heavyEffects = new() { "Artistic" };
+        private const int PreviewMaxDim = 900;
+        private const int DebounceMs = 80;
+        private const int DebounceHeavyMs = 300;
+
         private void TriggerLivePreview()
         {
             if (string.IsNullOrEmpty(_activeEffect)) return;
@@ -496,47 +644,77 @@ namespace VisionEditCV
 
             if (selectedMasks.Count == 0) return;
 
-            var effect = _activeEffect;
-            var src = (Bitmap)_canvas.OriginalBitmap.Clone();
-            var args = CaptureEffectArgs();
+            var effect  = _activeEffect;
+            var srcFull = (Bitmap)_canvas.OriginalBitmap.Clone();
+            var args    = CaptureEffectArgs();
+
+            // Heavy effects: longer debounce and downscaled preview
+            bool heavy    = _heavyEffects.Contains(effect);
+            int  debounce = heavy ? DebounceHeavyMs : DebounceMs;
 
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    await Task.Delay(180, token); // debounce
-
-                    Bitmap current = (Bitmap)src.Clone();
-                    foreach (var mask in selectedMasks)
-                    {
-                        token.ThrowIfCancellationRequested();
-                        Bitmap? next = ApplyEffectArgs(effect, current, mask, args);
-                        if (next != null)
-                        {
-                            if (!ReferenceEquals(current, src)) current.Dispose();
-                            current = next;
-                        }
-                    }
-
+                    await Task.Delay(debounce, token);
                     token.ThrowIfCancellationRequested();
-                    var result = current;
 
-                    Invoke(() =>
+                    // If another computation is still running, wait for it (poll every 30 ms).
+                    // If a newer request arrives while waiting, the token is cancelled and we bail.
+                    while (_previewRunning)
                     {
-                        _canvas.SetProcessedBitmap(result);
-                        result.Dispose();
-                    });
+                        await Task.Delay(30, token);
+                        token.ThrowIfCancellationRequested();
+                    }
+                    token.ThrowIfCancellationRequested();
+                    _previewRunning = true;
+
+                    try
+                    {
+                        Bitmap src     = heavy ? ScaleForPreview(srcFull, PreviewMaxDim) : srcFull;
+                        Bitmap current = (Bitmap)src.Clone();
+
+                        foreach (var mask in selectedMasks)
+                        {
+                            token.ThrowIfCancellationRequested();
+                            Bitmap? next = ApplyEffectArgs(effect, current, mask, args);
+                            if (next != null)
+                            {
+                                if (!ReferenceEquals(current, src)) current.Dispose();
+                                current = next;
+                            }
+                        }
+
+                        if (heavy && !ReferenceEquals(src, srcFull)) src.Dispose();
+                        token.ThrowIfCancellationRequested();
+
+                        Invoke(() => { _canvas.SetProcessedBitmap(current); current.Dispose(); });
+                    }
+                    finally { _previewRunning = false; }
                 }
-                catch (OperationCanceledException) { /* stale — discard */ }
+                catch (OperationCanceledException) { _previewRunning = false; /* stale — discard */ }
                 catch (Exception ex)
                 {
+                    _previewRunning = false;
                     System.Diagnostics.Debug.WriteLine($"Preview error: {ex.Message}");
                 }
-                finally
-                {
-                    src.Dispose();
-                }
+                finally { srcFull.Dispose(); }
             }, token);
+        }
+
+        /// <summary>Returns a copy scaled so the longest side is at most <paramref name="maxDim"/> pixels.
+        /// Returns the original if it is already within that limit.</summary>
+        private static Bitmap ScaleForPreview(Bitmap src, int maxDim)
+        {
+            if (src.Width <= maxDim && src.Height <= maxDim) return src;
+            float scale = (float)maxDim / Math.Max(src.Width, src.Height);
+            int   w     = Math.Max(1, (int)(src.Width  * scale));
+            int   h     = Math.Max(1, (int)(src.Height * scale));
+            var   bmp   = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using var g = System.Drawing.Graphics.FromImage(bmp);
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Bilinear;
+            g.DrawImage(src, 0, 0, w, h);
+            return bmp;
         }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -546,7 +724,7 @@ namespace VisionEditCV
         private record EffectArgs(
             Color TintColor, float TintStrength, int Brightness, float Contrast,
             bool CgTargetBg,
-            float ArtIntensity,
+            bool ArtStylizeMode, int ArtSigmaS, float ArtSigmaR, float ArtShade,
             int StScale, int StRotation, Color StBorderColor, int StThickness, int StShadowBlur,
             bool StickerOriginalBg, bool StickerSolidBg, Color StickerSolidColor,
             Bitmap? StickerImageBg, bool StickerTransparentBg,
@@ -560,24 +738,27 @@ namespace VisionEditCV
             TintStrength: _cgTintStrength.Value / 100f,
             Brightness: _cgBrightness.Value,
             Contrast: _cgContrast.Value / 10f,
-            CgTargetBg: _cgTargetBg.Checked,
-            ArtIntensity: _artIntensity.Value / 100f,
+            CgTargetBg: _cgTargetBgMode,
+            ArtStylizeMode: _artStylizeMode,
+            ArtSigmaS: _artSigmaS.Value,
+            ArtSigmaR: _artSigmaR.Value / 100f,
+            ArtShade: _artShade.Value / 1000f,
             StScale: _stScale.Value,
             StRotation: _stRotation.Value,
             StBorderColor: _stBorderColor.SelectedColor,
             StThickness: _stThickness.Value,
             StShadowBlur: _stShadowBlur.Value,
-            StickerOriginalBg: _rdoStickerOriginalBg.Checked,
-            StickerSolidBg: _rdoStickerColorBg.Checked,
+            StickerOriginalBg: _stickerBgMode == "Original",
+            StickerSolidBg: _stickerBgMode == "Solid",
             StickerSolidColor: _stBgColorSwatch.SelectedColor,
             StickerImageBg: _stickerCustomBg != null ? (Bitmap)_stickerCustomBg.Clone() : null,
-            StickerTransparentBg: _rdoStickerTransparentBg.Checked,
+            StickerTransparentBg: _stickerBgMode == "Transparent",
             PixelateMode: _pixelateMode,
             PbTargetBg: _pbTargetBg,
             PbIntensity: _pbIntensity.Value,
             PortraitBlur: _ptBlurStrength.Value,
             PortraitFeather: _ptFeatherAmount.Value,
-            GsTargetBg: _gsTargetBg.Checked
+            GsTargetBg: _gsTargetBgMode
         );
 
         // ═════════════════════════════════════════════════════════════════════
@@ -594,8 +775,9 @@ namespace VisionEditCV
                     a.Brightness, a.Contrast,
                     blackAndWhite: false, a.CgTargetBg),
 
-                "Artistic" => ImageEffects.PencilSketchMasked(
-                    image, mask, a.ArtIntensity),
+                "Artistic" => a.ArtStylizeMode
+                    ? ImageEffects.StylizeMasked(image, mask, a.ArtSigmaS, a.ArtSigmaR)
+                    : ImageEffects.PencilSketchMasked(image, mask, a.ArtSigmaS, a.ArtShade),
 
                 "Sticker" => ApplyStickerEffect(image, mask, a),
 
@@ -912,20 +1094,84 @@ namespace VisionEditCV
         private void EffectSubPanelResize(object sender, EventArgs e)
         {
             if (sender is not Panel panel) return;
-            int margin = 16;
-            _btnApplyEffect.Left = panel.ClientSize.Width - _btnApplyEffect.Width - margin;
-            _btnApplyEffect.Top = panel.ClientSize.Height - _btnApplyEffect.Height - margin;
+
+            int cy       = panel.ClientSize.Height / 2;
+            int rightPad = panel.Padding.Right;   // 160px reserved for Apply button
+
+            // Right slot: Reset above Apply, both vertically centred as a group
+            int slotX       = panel.ClientSize.Width - rightPad + (rightPad - _btnApplyEffect.Width) / 2;
+            int totalBtnH   = _btnResetEffect.Height + 6 + _btnApplyEffect.Height;
+            int slotTopY    = cy - totalBtnH / 2;
+            _btnResetEffect.Left = slotX;
+            _btnResetEffect.Top  = slotTopY;
+            _btnApplyEffect.Left = slotX;
+            _btnApplyEffect.Top  = slotTopY + _btnResetEffect.Height + 6;
+
+            // Available width for control groups (left pad + right pad already excluded by Dock=Fill padding)
+            int availW = panel.ClientSize.Width - panel.Padding.Left - rightPad;
+            int gap    = 14;
+
+            foreach (var flow in new FlowLayoutPanel[] { _cgFlow, _artFlow, _stFlow, _pbFlow, _ptFlow, _gsFlow })
+            {
+                var groups = flow.Controls.OfType<Panel>()
+                                          .Where(p => p.Visible)
+                                          .ToList();
+                if (groups.Count == 0) continue;
+
+                int groupH = groups[0].Height;
+                int topPad = Math.Max(0, (flow.Height - groupH) / 2);
+                flow.Padding = new Padding(0, topPad, 0, 0);
+
+                // Fixed-width groups (MinimumSize.Width > 0) keep their minimum; variable groups share remaining space
+                int fixedTotal = groups.Sum(g => g.MinimumSize.Width);
+                int varCount   = groups.Count(g => g.MinimumSize.Width == 0);
+                int totalGaps  = gap * (groups.Count - 1);
+                int remainW    = availW - fixedTotal - totalGaps;
+                int varW       = varCount > 0 ? Math.Max(60, remainW / varCount) : 60;
+
+                flow.SuspendLayout();
+                for (int i = 0; i < groups.Count; i++)
+                {
+                    var grp = groups[i];
+                    grp.Width  = grp.MinimumSize.Width > 0 ? grp.MinimumSize.Width : varW;
+                    grp.Margin = new Padding(0, 0, i < groups.Count - 1 ? gap : 0, 0);
+
+                    foreach (var s in grp.Controls.OfType<SliderControl>())
+                        s.Width = grp.Width - 10;
+                }
+                flow.ResumeLayout(performLayout: true);
+            }
         }
 
         private void TopBarResize(object sender, EventArgs e)
         {
             if (sender is not Panel bar) return;
-            int cy = bar.ClientSize.Height / 2;
+            int cy  = bar.ClientSize.Height / 2;
+            int w   = bar.ClientSize.Width;
+            int pad = 12;
 
+            // ── Left group (fixed positions) ─────────────────────────────────
+            // label1 → _lblSelMode → _btnBBox → _btnPrompt
+            int x = pad;
+            label1.Left        = x; x += label1.Width + 6;
+            _lblSelMode.Left   = x; x += _lblSelMode.Width + 8;
+            _btnBBox.Left      = x; x += _btnBBox.Width + 4;
+            _btnPrompt.Left    = x; x += _btnPrompt.Width + 8;
+            int leftEdge = x; // where prompt box starts
+
+            // ── Right group (right-anchored) ──────────────────────────────────
+            // [Start Server]  [Segment]
+            _btnStartServer.Left = w - pad - _btnStartServer.Width;
+            _btnSegment.Left     = _btnStartServer.Left - 8 - _btnSegment.Width;
+            int rightEdge = _btnSegment.Left - 8; // where prompt box ends
+
+            // ── Prompt box stretches between the two groups ───────────────────
+            _promptBox.Left  = leftEdge;
+            _promptBox.Width = Math.Max(80, rightEdge - leftEdge);
+
+            // ── Vertically center all controls ────────────────────────────────
             foreach (Control c in bar.Controls)
                 c.Top = cy - c.Height / 2;
-
-            _btnStartServer.Left = bar.ClientSize.Width - _btnStartServer.Width - 16;
         }
 
         private void PaintCenterBorder(object sender, PaintEventArgs e)

@@ -230,13 +230,13 @@ namespace VisionEditCV.Processing
             return MatToBitmap(finalResult);
         }
 
-        // ── Effect 2: Artistic Style (Pencil Sketch) ─────────────────────────
+        // ── Effect 2: Artistic Style ──────────────────────────────────────────
 
         /// <summary>
-        /// Applies cv2.pencilSketch on the masked region and blends it back.
-        /// intensity controls the blend: 0 = original, 1 = full sketch.
+        /// Applies cv2.stylization on the masked region.
+        /// sigmaS: spatial filter extent (1–200). sigmaR: color range (0.01–1.0).
         /// </summary>
-        public static Bitmap PencilSketchMasked(Bitmap image, float[,] mask, float intensity)
+        public static Bitmap StylizeMasked(Bitmap image, float[,] mask, int sigmaS, float sigmaR)
         {
             using Mat img = BitmapToMat(image);
             using Mat imgBgr = new Mat();
@@ -249,18 +249,38 @@ namespace VisionEditCV.Processing
             byte[,] binaryMask = ResizeAndThresholdMask(mask, imgBgr.Width, imgBgr.Height);
             using Mat maskMat = BuildMaskMat(binaryMask, imgBgr.Width, imgBgr.Height);
 
-            // Pencil sketch produces gray + color outputs
+            using Mat styled = new Mat();
+            CvInvoke.Stylization(imgBgr, styled, sigmaS, sigmaR);
+
+            using Mat result = imgBgr.Clone();
+            styled.CopyTo(result, maskMat);
+
+            return MatToBitmap(result);
+        }
+
+        /// <summary>
+        /// Applies cv2.pencilSketch on the masked region.
+        /// sigmaS: spatial filter extent (1–200). shadeFactor: shade intensity (0.0–0.1+).
+        /// </summary>
+        public static Bitmap PencilSketchMasked(Bitmap image, float[,] mask, int sigmaS, float shadeFactor)
+        {
+            using Mat img = BitmapToMat(image);
+            using Mat imgBgr = new Mat();
+
+            if (img.NumberOfChannels == 4)
+                CvInvoke.CvtColor(img, imgBgr, ColorConversion.Bgra2Bgr);
+            else
+                img.CopyTo(imgBgr);
+
+            byte[,] binaryMask = ResizeAndThresholdMask(mask, imgBgr.Width, imgBgr.Height);
+            using Mat maskMat = BuildMaskMat(binaryMask, imgBgr.Width, imgBgr.Height);
+
             using Mat gray = new Mat();
             using Mat colorSketch = new Mat();
-            CvInvoke.PencilSketch(imgBgr, gray, colorSketch, 60, 0.07f, 0.05f);
+            CvInvoke.PencilSketch(imgBgr, gray, colorSketch, sigmaS, 0.07f, shadeFactor);
 
-            // Blend sketch with original based on intensity, restricted to mask
-            using Mat blended = new Mat();
-            CvInvoke.AddWeighted(imgBgr, 1.0 - intensity, colorSketch, intensity, 0, blended);
-
-            // Only replace masked pixels
             using Mat result = imgBgr.Clone();
-            blended.CopyTo(result, maskMat);
+            colorSketch.CopyTo(result, maskMat);
 
             return MatToBitmap(result);
         }
