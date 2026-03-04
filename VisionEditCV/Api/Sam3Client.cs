@@ -208,7 +208,12 @@ namespace VisionEditCV.Api
                 onStatus.Report($"Connecting… attempt {attempt}");
                 try
                 {
-                    var response = await _healthHttp.GetAsync(url, ct);
+                    // Use a per-attempt timeout linked to the user's cancellation token
+                    // so we can distinguish a real user-cancel from an HTTP timeout
+                    using var attemptCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    attemptCts.CancelAfter(TimeSpan.FromSeconds(15));
+
+                    var response = await _healthHttp.GetAsync(url, attemptCts.Token);
                     if (response.IsSuccessStatusCode)
                     {
                         onStatus.Report("Connected");
@@ -217,16 +222,18 @@ namespace VisionEditCV.Api
                     onStatus.Report(
                         $"Server returned HTTP {(int)response.StatusCode} — retrying…");
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {
+                    // User explicitly cancelled — stop polling
                     break;
                 }
                 catch
                 {
+                    // HTTP timeout or network error — transient, keep retrying
                     onStatus.Report($"Connecting… attempt {attempt}");
                 }
 
-                try { await Task.Delay(10_000, ct); }
+                try { await Task.Delay(5_000, ct); }
                 catch (OperationCanceledException) { break; }
             }
 

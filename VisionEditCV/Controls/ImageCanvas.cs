@@ -48,15 +48,21 @@ namespace VisionEditCV.Controls
 
         // ── Image state ──────────────────────────────────────────────────────
         private Bitmap? _originalBitmap;
+        private Bitmap? _fileOriginalBitmap; // pristine on-disk copy, never overwritten by effects
         private Bitmap? _processedBitmap;
         private Bitmap? _displayBitmap;
         private bool    _showingOriginal = false;
 
         // ── Masks ────────────────────────────────────────────────────────────
-        private List<float[,]> _masks       = new();
-        private List<Color>    _maskColors  = new();
-        private List<bool>     _maskSelected = new();
-        private List<float>    _maskScores  = new();
+        private List<float[,]> _masks        = new();
+        private List<float[,]> _originalMasks = new(); // immutable copy set on SetMasks, used by Reset
+        private List<Color>    _maskColors   = new();
+        private List<bool>     _maskSelected  = new();
+        private List<float>    _maskScores   = new();
+
+        // Override mask list used only for display (e.g. transformed sticker masks)
+        // When null the raw _masks list is used.
+        private List<float[,]>? _displayMasksOverride = null;
 
         // ── Zoom & Pan ─────────────────────────────────────────────────────
         private float  _zoom = 1.0f;
@@ -123,6 +129,29 @@ namespace VisionEditCV.Controls
         public void LoadImage(string path)
         {
             _originalBitmap?.Dispose();
+            _fileOriginalBitmap?.Dispose();
+            _processedBitmap?.Dispose();
+            _displayBitmap?.Dispose();
+
+            _originalBitmap     = new Bitmap(path);
+            _fileOriginalBitmap = new Bitmap(path); // never replaced by effect commits
+            _processedBitmap    = null;
+            _displayBitmap      = null;
+
+            ClearMasks();
+            ClearBoxes();
+            ResetZoom();
+            Invalidate();
+        }
+
+        /// <summary>
+        /// Reloads the source file as the new original bitmap without clearing
+        /// masks, boxes, or resetting zoom. Used by "Reset All Effects" to undo
+        /// chained effect commits while keeping the current segmentation result.
+        /// </summary>
+        public void RestoreOriginalFromFile(string path)
+        {
+            _originalBitmap?.Dispose();
             _processedBitmap?.Dispose();
             _displayBitmap?.Dispose();
 
@@ -130,9 +159,6 @@ namespace VisionEditCV.Controls
             _processedBitmap = null;
             _displayBitmap   = null;
 
-            ClearMasks();
-            ClearBoxes();
-            ResetZoom();
             Invalidate();
         }
 
@@ -171,11 +197,30 @@ namespace VisionEditCV.Controls
             for (int i = 0; i < result.Masks.Count; i++)
             {
                 _masks.Add(result.Masks[i]);
+                // Keep an immutable copy so ResetAllEffects can restore original positions
+                var orig = new float[result.Masks[i].GetLength(0), result.Masks[i].GetLength(1)];
+                Array.Copy(result.Masks[i], orig, result.Masks[i].Length);
+                _originalMasks.Add(orig);
                 _maskColors.Add(Color.FromArgb(
                     rng.Next(80, 255), rng.Next(80, 255), rng.Next(80, 255)));
                 _maskSelected.Add(false);
                 _maskScores.Add(i < result.Scores.Count ? result.Scores[i] : 0f);
             }
+            RefreshDisplay();
+        }
+
+        /// <summary>
+        /// Permanently replaces the stored mask data with new masks (e.g. after a
+        /// transform is baked in on Apply). The display override is cleared so the
+        /// new raw masks are used directly for rendering.
+        /// Count must match the existing mask list.
+        /// </summary>
+        public void ReplaceMasks(List<float[,]> newMasks)
+        {
+            if (newMasks.Count != _masks.Count) return;
+            for (int i = 0; i < _masks.Count; i++)
+                _masks[i] = newMasks[i];
+            _displayMasksOverride = null;
             RefreshDisplay();
         }
 
@@ -186,16 +231,46 @@ namespace VisionEditCV.Controls
             RefreshDisplay();
         }
 
+        /// <summary>
+        /// Replaces the masks used for display rendering only (contour + overlay).
+        /// Pass null to revert to the original raw masks.
+        /// The count must match the existing mask list, or pass null to clear.
+        /// </summary>
+        public void SetDisplayMaskOverride(List<float[,]>? overrideMasks)
+        {
+            _displayMasksOverride = overrideMasks;
+            RefreshDisplay();
+        }
+
         public void ClearMasks()
         {
             _masks.Clear();
+            _originalMasks.Clear();
             _maskColors.Clear();
             _maskSelected.Clear();
             _maskScores.Clear();
+            _displayMasksOverride = null;
             _processedBitmap?.Dispose();
             _processedBitmap = null;
             _displayBitmap?.Dispose();
             _displayBitmap   = null;
+        }
+
+        /// <summary>
+        /// Restores _masks to the original untransformed data saved at segmentation time.
+        /// Also clears the display override. Used by ResetAllEffects.
+        /// </summary>
+        public void RestoreOriginalMasks()
+        {
+            if (_originalMasks.Count != _masks.Count) return;
+            for (int i = 0; i < _masks.Count; i++)
+            {
+                var orig = new float[_originalMasks[i].GetLength(0), _originalMasks[i].GetLength(1)];
+                Array.Copy(_originalMasks[i], orig, _originalMasks[i].Length);
+                _masks[i] = orig;
+            }
+            _displayMasksOverride = null;
+            RefreshDisplay();
         }
 
         public void ClearBoxes()
@@ -220,15 +295,16 @@ namespace VisionEditCV.Controls
             _displayBitmap = null;
 
             Bitmap? base_ = _showingOriginal
-                ? _originalBitmap
+                ? (_fileOriginalBitmap ?? _originalBitmap)
                 : (_processedBitmap ?? _originalBitmap);
 
             if (base_ == null) { Invalidate(); return; }
 
             if (_masks.Count > 0)
             {
+                var renderMasks = _displayMasksOverride ?? _masks;
                 _displayBitmap = ImageEffects.RenderMaskOverlays(
-                    base_, _masks, _maskColors, _maskSelected, _maskScores);
+                    base_, renderMasks, _maskColors, _maskSelected, _maskScores);
             }
             else
             {

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing.Drawing2D;
 
 namespace VisionEditCV.Controls
@@ -57,13 +58,15 @@ namespace VisionEditCV.Controls
         }
 
         /// <summary>The text the user has typed.</summary>
-        public override string? Text
+        [AllowNull]
+        public override string Text
         {
             get => _inner.Text;
             set => _inner.Text = value ?? string.Empty;
         }
 
-        public override Font? Font
+        [AllowNull]
+        public override Font Font
         {
             get => base.Font;
             set { base.Font = value; if (value != null) _inner.Font = value; }

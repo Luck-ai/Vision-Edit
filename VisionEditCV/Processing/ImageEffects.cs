@@ -98,33 +98,34 @@ namespace VisionEditCV.Processing
         {
             int srcH = mask.GetLength(0);
             int srcW = mask.GetLength(1);
+            int srcBytes = srcH * srcW * sizeof(float);
 
-            // Build a single-channel float Mat from the mask
-            float[] flat = new float[srcH * srcW];
-            for (int r = 0; r < srcH; r++)
-                for (int c = 0; c < srcW; c++)
-                    flat[r * srcW + c] = mask[r, c];
+            // Copy the float[,] into a byte[] via pinned GCHandle — no LINQ, no per-element loop
+            var rawBytes = new byte[srcBytes];
+            var gcHandle = GCHandle.Alloc(mask, GCHandleType.Pinned);
+            try { Marshal.Copy(gcHandle.AddrOfPinnedObject(), rawBytes, 0, srcBytes); }
+            finally { gcHandle.Free(); }
 
-            Mat srcMat = new Mat(srcH, srcW, DepthType.Cv32F, 1);
-            srcMat.SetTo(flat.SelectMany(BitConverter.GetBytes).ToArray());
+            using Mat srcMat = new Mat(srcH, srcW, DepthType.Cv32F, 1);
+            srcMat.SetTo(rawBytes);
 
-            Mat dstMat = new Mat();
+            // Resize then threshold in one pass (CvInvoke.Threshold works on Cv32F)
+            using Mat dstMat = new Mat();
             CvInvoke.Resize(srcMat, dstMat, new Size(targetW, targetH),
                 interpolation: Inter.Linear);
 
-            byte[] dstData = new byte[targetH * targetW * 4]; // Cv32F → 4 bytes each
-            dstMat.CopyTo(dstData);
+            using Mat dstU8 = new Mat();
+            CvInvoke.Threshold(dstMat, dstU8, threshold, 255, ThresholdType.Binary);
+
+            // dstU8 is Cv32F after Threshold on a Cv32F src — convert to actual U8
+            using Mat dstByte = new Mat();
+            dstU8.ConvertTo(dstByte, DepthType.Cv8U);
+
+            byte[] dstData = new byte[targetH * targetW];
+            dstByte.CopyTo(dstData);
 
             var binary = new byte[targetH, targetW];
-            for (int r = 0; r < targetH; r++)
-                for (int c = 0; c < targetW; c++)
-                {
-                    float val = BitConverter.ToSingle(dstData, (r * targetW + c) * 4);
-                    binary[r, c] = val > threshold ? (byte)255 : (byte)0;
-                }
-
-            srcMat.Dispose();
-            dstMat.Dispose();
+            Buffer.BlockCopy(dstData, 0, binary, 0, dstData.Length);
             return binary;
         }
 
@@ -233,8 +234,33 @@ namespace VisionEditCV.Processing
         // ── Effect 2: Artistic Style ──────────────────────────────────────────
 
         /// <summary>
-        /// Applies cv2.stylization on the masked region.
-        /// sigmaS: spatial filter extent (1–200). sigmaR: color range (0.01–1.0).
+        /// Returns the bounding rectangle of all non-zero pixels in a binary mask,
+        /// padded by <paramref name="pad"/> pixels and clamped to [0, w) x [0, h).
+        /// Returns Rectangle.Empty if the mask is entirely zero.
+        /// </summary>
+        private static Rectangle MaskBoundingRect(byte[,] binaryMask, int w, int h, int pad = 8)
+        {
+            int minX = w, minY = h, maxX = 0, maxY = 0;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    if (binaryMask[y, x] != 0)
+                    {
+                        if (x < minX) minX = x;
+                        if (y < minY) minY = y;
+                        if (x > maxX) maxX = x;
+                        if (y > maxY) maxY = y;
+                    }
+            if (minX > maxX) return Rectangle.Empty;
+            int rx = Math.Max(0, minX - pad);
+            int ry = Math.Max(0, minY - pad);
+            int rw = Math.Min(w, maxX + pad + 1) - rx;
+            int rh = Math.Min(h, maxY + pad + 1) - ry;
+            return new Rectangle(rx, ry, rw, rh);
+        }
+
+        /// <summary>
+        /// Applies cv2.stylization only on the mask bounding-box crop, then pastes
+        /// the result back. sigmaS: spatial filter extent (1–200). sigmaR: color range (0.01–1.0).
         /// </summary>
         public static Bitmap StylizeMasked(Bitmap image, float[,] mask, int sigmaS, float sigmaR)
         {
@@ -247,20 +273,26 @@ namespace VisionEditCV.Processing
                 img.CopyTo(imgBgr);
 
             byte[,] binaryMask = ResizeAndThresholdMask(mask, imgBgr.Width, imgBgr.Height);
+            Rectangle roi = MaskBoundingRect(binaryMask, imgBgr.Width, imgBgr.Height);
+            if (roi.IsEmpty) return MatToBitmap(imgBgr);
+
             using Mat maskMat = BuildMaskMat(binaryMask, imgBgr.Width, imgBgr.Height);
 
-            using Mat styled = new Mat();
-            CvInvoke.Stylization(imgBgr, styled, sigmaS, sigmaR);
+            // Crop, stylize only the ROI, paste back
+            using Mat crop = new Mat(imgBgr, roi);
+            using Mat styledCrop = new Mat();
+            CvInvoke.Stylization(crop, styledCrop, sigmaS, sigmaR);
 
             using Mat result = imgBgr.Clone();
-            styled.CopyTo(result, maskMat);
+            using Mat maskRoi = new Mat(maskMat, roi);
+            styledCrop.CopyTo(new Mat(result, roi), maskRoi);
 
             return MatToBitmap(result);
         }
 
         /// <summary>
-        /// Applies cv2.pencilSketch on the masked region.
-        /// sigmaS: spatial filter extent (1–200). shadeFactor: shade intensity (0.0–0.1+).
+        /// Applies cv2.pencilSketch only on the mask bounding-box crop, then pastes
+        /// the result back. sigmaS: spatial filter extent (1–200). shadeFactor: shade intensity.
         /// </summary>
         public static Bitmap PencilSketchMasked(Bitmap image, float[,] mask, int sigmaS, float shadeFactor)
         {
@@ -273,14 +305,20 @@ namespace VisionEditCV.Processing
                 img.CopyTo(imgBgr);
 
             byte[,] binaryMask = ResizeAndThresholdMask(mask, imgBgr.Width, imgBgr.Height);
+            Rectangle roi = MaskBoundingRect(binaryMask, imgBgr.Width, imgBgr.Height);
+            if (roi.IsEmpty) return MatToBitmap(imgBgr);
+
             using Mat maskMat = BuildMaskMat(binaryMask, imgBgr.Width, imgBgr.Height);
 
+            // Crop, sketch only the ROI, paste back
+            using Mat crop = new Mat(imgBgr, roi);
             using Mat gray = new Mat();
             using Mat colorSketch = new Mat();
-            CvInvoke.PencilSketch(imgBgr, gray, colorSketch, sigmaS, 0.07f, shadeFactor);
+            CvInvoke.PencilSketch(crop, gray, colorSketch, sigmaS, 0.07f, shadeFactor);
 
             using Mat result = imgBgr.Clone();
-            colorSketch.CopyTo(result, maskMat);
+            using Mat maskRoi = new Mat(maskMat, roi);
+            colorSketch.CopyTo(new Mat(result, roi), maskRoi);
 
             return MatToBitmap(result);
         }
@@ -310,67 +348,78 @@ namespace VisionEditCV.Processing
 
             int w = img3.Width, h = img3.Height;
             byte[,] binaryMask = ResizeAndThresholdMask(mask, w, h, threshold);
+            using Mat maskMono = BuildMaskMat(binaryMask, w, h);
 
-            // Build BGRA sticker (transparent bg)
+            // ── SHADOW ───────────────────────────────────────────────────────────
+            // Build a BGRA Mat: black pixels, alpha = blurred+shifted mask * 0.5
+            // Only render shadow when shadowBlur > 0 (slider is non-zero)
             Mat sticker = new Mat(h, w, DepthType.Cv8U, 4);
             sticker.SetTo(new MCvScalar(0, 0, 0, 0));
 
-            using Mat maskMono = BuildMaskMat(binaryMask, w, h);
+            if (shadowBlur > 0)
+            {
+                int blurKv = shadowBlur % 2 == 0 ? shadowBlur + 1 : shadowBlur;
+                using Mat shadowBlurred = new Mat();
+                CvInvoke.GaussianBlur(maskMono, shadowBlurred, new Size(blurKv, blurKv), 0);
 
-            // Shadow
-            int blurKv = shadowBlur % 2 == 0 ? shadowBlur + 1 : shadowBlur;
-            if (blurKv < 1) blurKv = 1;
-            using Mat shadowMask = new Mat();
-            CvInvoke.GaussianBlur(maskMono, shadowMask, new Size(blurKv, blurKv), 0);
-            using Mat shadowShifted = new Mat();
-            float[] mShadow = new float[] { 1, 0, 20, 0, 1, 20 };
-            using Mat mShadowMat = new Mat(2, 3, DepthType.Cv32F, 1);
-            mShadowMat.SetTo(mShadow.SelectMany(BitConverter.GetBytes).ToArray());
-            CvInvoke.WarpAffine(shadowMask, shadowShifted, mShadowMat, new Size(w, h));
+                // Shift shadow +20px right, +20px down
+                float[] mShadow = new float[] { 1, 0, 20, 0, 1, 20 };
+                using Mat mShadowMat = new Mat(2, 3, DepthType.Cv32F, 1);
+                mShadowMat.SetTo(mShadow.SelectMany(BitConverter.GetBytes).ToArray());
+                using Mat shadowShifted = new Mat();
+                CvInvoke.WarpAffine(shadowBlurred, shadowShifted, mShadowMat, new Size(w, h));
 
-            var stickerImg = sticker.ToImage<Bgra, byte>();
-            var shadowImg = shadowShifted.ToImage<Gray, byte>();
-            for (int r = 0; r < h; r++)
-                for (int c = 0; c < w; c++)
-                    stickerImg[r, c] = new Bgra(0, 0, 0, (byte)(shadowImg[r, c].Intensity * 0.5));
-            sticker = stickerImg.Mat.Clone();
+                // Scale alpha to 50% — multiply by 0.5 in float then convert back
+                using Mat shadowF = new Mat();
+                shadowShifted.ConvertTo(shadowF, DepthType.Cv32F, 1.0 / 255.0);
+                using Mat shadowAlpha = new Mat();
+                CvInvoke.Multiply(shadowF, new ScalarArray(new MCvScalar(0.5)), shadowAlpha);
+                using Mat shadowAlpha8 = new Mat();
+                shadowAlpha.ConvertTo(shadowAlpha8, DepthType.Cv8U, 255.0);
 
-            // Copy foreground pixels (no contour yet — drawn after transform)
-            var stickerImg2 = sticker.ToImage<Bgra, byte>();
-            var srcImg = img3.ToImage<Bgr, byte>();
-            for (int r = 0; r < h; r++)
-                for (int c = 0; c < w; c++)
-                    if (binaryMask[r, c] == 255)
-                    {
-                        var px = srcImg[r, c];
-                        stickerImg2[r, c] = new Bgra(px.Blue, px.Green, px.Red, 255);
-                    }
-            sticker = stickerImg2.Mat.Clone();
+                // Merge [B=0, G=0, R=0, A=shadowAlpha8] into sticker
+                using Mat zeros = new Mat(h, w, DepthType.Cv8U, 1);
+                zeros.SetTo(new MCvScalar(0));
+                using var channels = new Emgu.CV.Util.VectorOfMat(zeros, zeros, zeros, shadowAlpha8);
+                CvInvoke.Merge(channels, sticker);
+            }
 
-            // Scale + Rotate via WarpAffine around mask centroid
+            // ── FOREGROUND COPY ──────────────────────────────────────────────────
+            // Convert source to BGRA, set alpha=255 for masked pixels, copy onto sticker
+            using Mat srcBgra = new Mat();
+            CvInvoke.CvtColor(img3, srcBgra, ColorConversion.Bgr2Bgra);
+
+            // Set alpha channel of srcBgra to maskMono (255 inside mask, 0 outside)
+            using Mat srcAlpha = new Mat();
+            CvInvoke.ExtractChannel(srcBgra, srcAlpha, 3);
+            CvInvoke.BitwiseOr(srcAlpha, maskMono, srcAlpha);  // alpha=255 where mask=255
+
+            using var fgChannels = new Emgu.CV.Util.VectorOfMat();
+            CvInvoke.Split(srcBgra, fgChannels);
+            // Replace alpha channel with maskMono
+            using var fgWithAlpha = new Emgu.CV.Util.VectorOfMat(
+                fgChannels[0], fgChannels[1], fgChannels[2], maskMono);
+            using Mat fgBgra = new Mat();
+            CvInvoke.Merge(fgWithAlpha, fgBgra);
+
+            // Copy foreground pixels onto sticker using maskMono as mask
+            fgBgra.CopyTo(sticker, maskMono);
+
+            // ── SCALE + ROTATE ───────────────────────────────────────────────────
             if (Math.Abs(scaleFactor - 1.0f) > 0.001f || Math.Abs(rotationAngle) > 0.001f)
             {
-                // Find centroid of the mask region
-                float cx = 0, cy = 0;
-                int count = 0;
-                for (int r = 0; r < binaryMask.GetLength(0); r++)
-                    for (int c = 0; c < binaryMask.GetLength(1); c++)
-                        if (binaryMask[r, c] == 255)
-                        {
-                            cx += c;
-                            cy += r;
-                            count++;
-                        }
-                if (count > 0) { cx /= count; cy /= count; }
-                else { cx = w / 2f; cy = h / 2f; }
+                // Find centroid of the mask region using moments (faster than pixel loop)
+                using Mat maskF = new Mat();
+                maskMono.ConvertTo(maskF, DepthType.Cv32F);
+                var moments = CvInvoke.Moments(maskF, false);
+                float cx, cy;
+                if (moments.M00 > 0)
+                { cx = (float)(moments.M10 / moments.M00); cy = (float)(moments.M01 / moments.M00); }
+                else
+                { cx = w / 2f; cy = h / 2f; }
 
-                // Scale coordinates to current sticker dimensions
-                float cxS = cx * w / Math.Max(1, binaryMask.GetLength(1));
-                float cyS = cy * h / Math.Max(1, binaryMask.GetLength(0));
-
-                // Build combined rotation + scale matrix around the mask centroid
                 using Mat transform = new Mat();
-                CvInvoke.GetRotationMatrix2D(new PointF(cxS, cyS), rotationAngle, scaleFactor, transform);
+                CvInvoke.GetRotationMatrix2D(new PointF(cx, cy), rotationAngle, scaleFactor, transform);
                 Mat warped = new Mat();
                 CvInvoke.WarpAffine(sticker, warped, transform, new Size(w, h),
                     Inter.Linear, Warp.Default, BorderType.Constant, new MCvScalar(0, 0, 0, 0));
@@ -378,10 +427,9 @@ namespace VisionEditCV.Processing
                 sticker = warped;
             }
 
-            // Draw contour border AFTER rotate/scale so it follows the final shape
+            // ── CONTOUR BORDER ───────────────────────────────────────────────────
             if (contourThickness > 0)
             {
-                // Extract alpha channel as a mask, find contours, draw border
                 using Mat alphaCh = new Mat();
                 CvInvoke.ExtractChannel(sticker, alphaCh, 3);
                 using Mat alphaBin = new Mat();
@@ -494,7 +542,14 @@ namespace VisionEditCV.Processing
                     flatMask[r * srcW + c] = mask[r, c] > 0.5f ? 1f : 0f;
 
             Mat floatMaskMat = new Mat(srcH, srcW, DepthType.Cv32F, 1);
-            floatMaskMat.SetTo(flatMask.SelectMany(BitConverter.GetBytes).ToArray());
+            var handle = System.Runtime.InteropServices.GCHandle.Alloc(flatMask,
+                System.Runtime.InteropServices.GCHandleType.Pinned);
+            try
+            {
+                System.Runtime.InteropServices.Marshal.Copy(
+                    flatMask, 0, floatMaskMat.DataPointer, flatMask.Length);
+            }
+            finally { handle.Free(); }
 
             Mat resizedMask = new Mat();
             CvInvoke.Resize(floatMaskMat, resizedMask, new Size(w, h), interpolation: Inter.Linear);
@@ -669,17 +724,18 @@ namespace VisionEditCV.Processing
 
                 CvInvoke.AddWeighted(overlay, 1.0, coloredMask, maskAlpha, 0, overlay);
 
-                // Contour
+                // Contour — only draw when mask is NOT selected (selected mask border is
+                // handled by the effect itself; the cyan selection outline would cover it)
                 using VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
                 using Mat hier = new Mat();
                 CvInvoke.FindContours(maskMat, contours, hier,
                     RetrType.External, ChainApproxMethod.ChainApproxSimple);
 
-                var contourColor = selected[i]
-                    ? new MCvScalar(0, 255, 255)   // bright cyan for selected
-                    : new MCvScalar(c.B, c.G, c.R); // match mask color when unselected
-                CvInvoke.DrawContours(overlay, contours, -1, contourColor,
-                    selected[i] ? 4 : 3);
+                if (!selected[i])
+                {
+                    CvInvoke.DrawContours(overlay, contours, -1,
+                        new MCvScalar(c.B, c.G, c.R), 3);
+                }
 
                 // Mask label tag
                 if (contours.Size > 0)
@@ -765,13 +821,87 @@ namespace VisionEditCV.Processing
 
         // ── Internal helpers ──────────────────────────────────────────────────
 
+        /// <summary>
+        /// Applies the same scale+rotation transform used by ExtractSticker to a
+        /// float mask, returning a new float[,] in the same dimensions.
+        /// Call this from the live-preview path so the mask overlay stays in sync
+        /// with the transformed subject.
+        /// <param name="previewMaxDim">
+        ///   If &gt; 0, the mask is processed at a downscaled resolution capped to this
+        ///   size (longest side), then the result is upscaled back — much faster for
+        ///   live preview. Pass 0 to process at full resolution (Apply path).
+        /// </param>
+        /// </summary>
+        public static float[,] TransformMaskForDisplay(
+            float[,] mask,
+            int imageW, int imageH,
+            float scaleFactor,
+            float rotationAngle,
+            float threshold = 0.5f,
+            int previewMaxDim = 0)
+        {
+            // If no transform, return a copy as-is (original dimensions)
+            if (Math.Abs(scaleFactor - 1.0f) <= 0.001f && Math.Abs(rotationAngle) <= 0.001f)
+            {
+                var copy = new float[mask.GetLength(0), mask.GetLength(1)];
+                Array.Copy(mask, copy, mask.Length);
+                return copy;
+            }
+
+            // Decide working resolution
+            int workW = imageW, workH = imageH;
+            if (previewMaxDim > 0 && Math.Max(imageW, imageH) > previewMaxDim)
+            {
+                float s = (float)previewMaxDim / Math.Max(imageW, imageH);
+                workW = Math.Max(1, (int)(imageW * s));
+                workH = Math.Max(1, (int)(imageH * s));
+            }
+
+            byte[,] binary = ResizeAndThresholdMask(mask, workW, workH, threshold);
+            using Mat maskMono = BuildMaskMat(binary, workW, workH);
+
+            // Compute centroid the same way ExtractSticker does
+            using Mat maskF = new Mat();
+            maskMono.ConvertTo(maskF, DepthType.Cv32F);
+            var moments = CvInvoke.Moments(maskF, false);
+            float cx, cy;
+            if (moments.M00 > 0)
+            { cx = (float)(moments.M10 / moments.M00); cy = (float)(moments.M01 / moments.M00); }
+            else
+            { cx = workW / 2f; cy = workH / 2f; }
+
+            using Mat transform = new Mat();
+            CvInvoke.GetRotationMatrix2D(new PointF(cx, cy), rotationAngle, scaleFactor, transform);
+            using Mat warped = new Mat();
+            CvInvoke.WarpAffine(maskMono, warped, transform, new Size(workW, workH),
+                Inter.Linear, Warp.Default, BorderType.Constant, new MCvScalar(0));
+
+            // If we worked at reduced resolution, upscale back to original mask dimensions
+            Mat finalMono = warped;
+            Mat? upscaled = null;
+            if (workW != imageW || workH != imageH)
+            {
+                upscaled = new Mat();
+                CvInvoke.Resize(warped, upscaled, new Size(imageW, imageH), interpolation: Inter.Nearest);
+                finalMono = upscaled;
+            }
+
+            // Convert back to float[,] (0 or 1) using BlockCopy
+            byte[] data = new byte[imageH * imageW];
+            finalMono.CopyTo(data);
+            upscaled?.Dispose();
+
+            var result = new float[imageH, imageW];
+            for (int r = 0; r < imageH; r++)
+                for (int c = 0; c < imageW; c++)
+                    result[r, c] = data[r * imageW + c] > 128 ? 1f : 0f;
+            return result;
+        }
+
         private static Mat BuildMaskMat(byte[,] binaryMask, int w, int h)
         {
             byte[] flat = new byte[h * w];
-            for (int r = 0; r < h; r++)
-                for (int c = 0; c < w; c++)
-                    flat[r * w + c] = binaryMask[r, c];
-
+            Buffer.BlockCopy(binaryMask, 0, flat, 0, flat.Length);
             Mat m = new Mat(h, w, DepthType.Cv8U, 1);
             m.SetTo(flat);
             return m;
