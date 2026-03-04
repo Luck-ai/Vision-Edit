@@ -134,7 +134,7 @@ namespace VisionEditCV.Processing
         /// <summary>
         /// Port of Color_Grading() from functions.py.
         /// Applies tint, brightness, contrast and optional B&W conversion
-        /// to either the foreground (mask) or background (inverse mask).
+        /// to the masked region. Pass an inverted mask to target the background.
         /// </summary>
         public static Bitmap ColorGrading(
             Bitmap image,
@@ -143,8 +143,7 @@ namespace VisionEditCV.Processing
             float tintStrength,        // 0..1
             int brightness,            // -255..255
             float contrast,            // 0.1..3.0
-            bool blackAndWhite,
-            bool targetBackground)
+            bool blackAndWhite)
         {
             using Mat img = BitmapToMat(image);
             using Mat imgBgr = new Mat();
@@ -156,79 +155,48 @@ namespace VisionEditCV.Processing
                 img.CopyTo(imgBgr);
 
             byte[,] binaryMask = ResizeAndThresholdMask(mask, imgBgr.Width, imgBgr.Height);
-
-            // Build binary mask Mat and its inverse
             using Mat maskMat = BuildMaskMat(binaryMask, imgBgr.Width, imgBgr.Height);
-            using Mat inverseMask = new Mat();
-            CvInvoke.BitwiseNot(maskMat, inverseMask);
 
-            // Split into foreground / background
-            using Mat foreground = new Mat();
-            using Mat background = new Mat();
-            CvInvoke.BitwiseAnd(imgBgr, imgBgr, foreground, maskMat);
-            CvInvoke.BitwiseAnd(imgBgr, imgBgr, background, inverseMask);
-
-            Mat workingLayer = new Mat();
-            Mat staticLayer = new Mat();
-            Mat workingMask = new Mat();
-
-            if (targetBackground)
-            {
-                background.CopyTo(workingLayer);
-                foreground.CopyTo(staticLayer);
-                inverseMask.CopyTo(workingMask);
-            }
-            else
-            {
-                foreground.CopyTo(workingLayer);
-                background.CopyTo(staticLayer);
-                maskMat.CopyTo(workingMask);
-            }
+            // Process the full image, then copy only masked pixels back
+            Mat processed = imgBgr.Clone();
 
             // B&W conversion
             if (blackAndWhite)
             {
                 using Mat gray = new Mat();
                 using Mat grayBgr = new Mat();
-                CvInvoke.CvtColor(workingLayer, gray, ColorConversion.Bgr2Gray);
+                CvInvoke.CvtColor(processed, gray, ColorConversion.Bgr2Gray);
                 CvInvoke.CvtColor(gray, grayBgr, ColorConversion.Gray2Bgr);
-                workingLayer.Dispose();
-                workingLayer = grayBgr.Clone();
+                processed.Dispose();
+                processed = grayBgr.Clone();
             }
 
             // Brightness & contrast: convertScaleAbs(alpha=contrast, beta=brightness)
             using Mat adjusted = new Mat();
-            CvInvoke.ConvertScaleAbs(workingLayer, adjusted, contrast, brightness);
-            workingLayer.Dispose();
-            workingLayer = adjusted.Clone();
+            CvInvoke.ConvertScaleAbs(processed, adjusted, contrast, brightness);
+            processed.Dispose();
+            processed = adjusted.Clone();
 
             // Tint
             if (tintStrength > 0f)
             {
-                using Mat tintLayer = new Mat(workingLayer.Rows, workingLayer.Cols,
-                    workingLayer.Depth, workingLayer.NumberOfChannels);
+                using Mat tintLayer = new Mat(processed.Rows, processed.Cols,
+                    processed.Depth, processed.NumberOfChannels);
                 tintLayer.SetTo(new MCvScalar(tintColor.B, tintColor.G, tintColor.R));
 
                 using Mat tinted = new Mat();
-                CvInvoke.AddWeighted(workingLayer, 1.0 - tintStrength,
+                CvInvoke.AddWeighted(processed, 1.0 - tintStrength,
                     tintLayer, tintStrength, 0, tinted);
-                workingLayer.Dispose();
-                workingLayer = tinted.Clone();
+                processed.Dispose();
+                processed = tinted.Clone();
             }
 
-            // Reapply mask
-            using Mat maskedWorking = new Mat();
-            CvInvoke.BitwiseAnd(workingLayer, workingLayer, maskedWorking, workingMask);
-            workingLayer.Dispose();
-            workingMask.Dispose();
+            // Composite: copy processed pixels onto original only where mask is set
+            using Mat result = imgBgr.Clone();
+            processed.CopyTo(result, maskMat);
+            processed.Dispose();
 
-            // Combine
-            using Mat finalResult = new Mat();
-            CvInvoke.Add(maskedWorking, staticLayer, finalResult);
-
-            staticLayer.Dispose();
-
-            return MatToBitmap(finalResult);
+            return MatToBitmap(result);
         }
 
         // ── Effect 2: Artistic Style ──────────────────────────────────────────

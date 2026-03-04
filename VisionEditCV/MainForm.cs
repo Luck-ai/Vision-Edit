@@ -1038,10 +1038,10 @@ namespace VisionEditCV
             return effect switch
             {
                 "ColorGrading" => ImageEffects.ColorGrading(
-                    image, mask,
+                    image, a.CgTargetBg ? InvertMask(mask) : mask,
                     a.TintColor, a.TintStrength,
                     a.Brightness, a.Contrast,
-                    blackAndWhite: false, a.CgTargetBg),
+                    blackAndWhite: false),
 
                 "Artistic" => a.ArtStylizeMode
                     ? ImageEffects.StylizeMasked(image, mask,
@@ -1061,10 +1061,10 @@ namespace VisionEditCV
                     Math.Clamp((int)Math.Round(a.PortraitFeather * a.PortraitScale), 0, 501)),
 
                 "Grayscale" => ImageEffects.ColorGrading(
-                    image, mask,
+                    image, a.GsTargetBg ? InvertMask(mask) : mask,
                     Color.White, 0f,
                     0, 1.0f,
-                    blackAndWhite: true, targetBackground: a.GsTargetBg),
+                    blackAndWhite: true),
 
                 _ => null
             };
