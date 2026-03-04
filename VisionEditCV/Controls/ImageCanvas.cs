@@ -108,7 +108,14 @@ namespace VisionEditCV.Controls
         public IReadOnlyList<bool>  MaskSelected     => _maskSelected;
         public List<Color>          MaskColors       => _maskColors;
         public List<float[,]>       Masks            => _masks;
+        public bool                 HideMasks        { get; private set; } = false;
         public List<float>          MaskScores       => _maskScores;
+
+        public void SetHideMasks(bool hide)
+        {
+            HideMasks = hide;
+            RefreshDisplay();
+        }
 
         // ── Constructor ──────────────────────────────────────────────────────
 
@@ -300,7 +307,7 @@ namespace VisionEditCV.Controls
 
             if (base_ == null) { Invalidate(); return; }
 
-            if (_masks.Count > 0)
+            if (_masks.Count > 0 && !HideMasks)
             {
                 var renderMasks = _displayMasksOverride ?? _masks;
                 _displayBitmap = ImageEffects.RenderMaskOverlays(

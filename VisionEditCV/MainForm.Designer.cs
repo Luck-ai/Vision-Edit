@@ -27,6 +27,7 @@ namespace VisionEditCV
 
         // ── Right panel extras ───────────────────────────────────────────────
         private DarkButton _btnClearMasks;
+        private DarkButton _btnHideMasks;
         private DarkButton _btnToggleRight;
 
         // ── Left panel ───────────────────────────────────────────────────────
@@ -206,6 +207,7 @@ namespace VisionEditCV
             _maskListTitle = new Label();
             _maskList = new MaskListPanel();
             _btnClearMasks = new DarkButton();
+            _btnHideMasks = new DarkButton();
             _btnToggleRight = new DarkButton();
             _rightPanel = new Panel();
             _effectSubPanel = new Panel();
@@ -742,6 +744,23 @@ namespace VisionEditCV
             _btnClearMasks.Text = "Clear All Masks";
             _btnClearMasks.UseVisualStyleBackColor = false;
             // 
+            // _btnHideMasks
+            // 
+            _btnHideMasks.BackColor = Color.FromArgb(32, 34, 38);
+            _btnHideMasks.Dock = DockStyle.Bottom;
+            _btnHideMasks.FlatAppearance.BorderColor = Color.FromArgb(45, 45, 55);
+            _btnHideMasks.FlatStyle = FlatStyle.Flat;
+            _btnHideMasks.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            _btnHideMasks.ForeColor = Color.FromArgb(220, 220, 220);
+            _btnHideMasks.HoverBackColor = null;
+            _btnHideMasks.Location = new Point(48, 1279);
+            _btnHideMasks.Margin = new Padding(6, 6, 6, 6);
+            _btnHideMasks.Name = "_btnHideMasks";
+            _btnHideMasks.Size = new Size(610, 73);
+            _btnHideMasks.TabIndex = 4;
+            _btnHideMasks.Text = "Hide Masks";
+            _btnHideMasks.UseVisualStyleBackColor = false;
+            // 
             // _btnToggleRight
             // 
             _btnToggleRight.BackColor = Color.FromArgb(32, 34, 38);
@@ -764,6 +783,7 @@ namespace VisionEditCV
             _rightPanel.Controls.Add(_btnToggleRight);
             _rightPanel.Controls.Add(_maskList);
             _rightPanel.Controls.Add(_maskListTitle);
+            _rightPanel.Controls.Add(_btnHideMasks);
             _rightPanel.Controls.Add(_btnClearMasks);
             _rightPanel.Dock = DockStyle.Right;
             _rightPanel.Location = new Point(1708, 226);

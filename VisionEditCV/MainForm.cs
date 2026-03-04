@@ -178,6 +178,14 @@ namespace VisionEditCV
             // Image loading / mask management
             _btnChangeImage.Click += (s, e) => OpenImageFile();
             _btnClearMasks.Click += (s, e) => ClearAllMasks();
+            _btnHideMasks.Click += (s, e) =>
+            {
+                bool hiding = !_canvas.HideMasks;
+                _canvas.SetHideMasks(hiding);
+                _btnHideMasks.Text = hiding ? "Show Masks" : "Hide Masks";
+                _btnHideMasks.BackColor = hiding ? _Cyan : Color.FromArgb(32, 34, 38);
+                _btnHideMasks.ForeColor = hiding ? _BgMain : _TextMain;
+            };
             _btnToggleRight.Click += (s, e) => ToggleRightPanel();
             _canvas.ImageDropped += (s, e) => OnImageLoaded();
             _canvas.Click += (s, e) =>
@@ -401,6 +409,7 @@ namespace VisionEditCV
             _maskListTitle.Visible = _rightPanelExpanded;
             _maskList.Visible = _rightPanelExpanded;
             _btnClearMasks.Visible = _rightPanelExpanded;
+            _btnHideMasks.Visible = _rightPanelExpanded;
             _btnToggleRight.Text = _rightPanelExpanded ? "›" : "‹";
             RightPanelResize(_rightPanel, EventArgs.Empty);
         }
@@ -504,6 +513,7 @@ namespace VisionEditCV
                 _lastResult = result;
                 _canvas.SetMasks(result);
                 _canvas.ClearBoxes();
+                _canvas.SetHideMasks(false);
                 _maskList.Populate(_canvas.MaskColors, _canvas.MaskScores);
                 _rightPanelExpanded = true;
                 _rightPanel.Width = RightPanelFullWidth;
@@ -512,6 +522,10 @@ namespace VisionEditCV
                 _maskListTitle.Visible = true;
                 _maskList.Visible = true;
                 _btnClearMasks.Visible = true;
+                _btnHideMasks.Visible = true;
+                _btnHideMasks.Text = "Hide Masks";
+                _btnHideMasks.BackColor = Color.FromArgb(32, 34, 38);
+                _btnHideMasks.ForeColor = _TextMain;
                 RightPanelResize(_rightPanel, EventArgs.Empty);
             }
             catch (Exception ex)
