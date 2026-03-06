@@ -131,11 +131,6 @@ namespace VisionEditCV.Processing
 
         // ── Effect 1: Color Grading ───────────────────────────────────────────
 
-        /// <summary>
-        /// Port of Color_Grading() from functions.py.
-        /// Applies tint, brightness, contrast and optional B&W conversion
-        /// to the masked region. Pass an inverted mask to target the background.
-        /// </summary>
         public static Bitmap ColorGrading(
             Bitmap image,
             float[,] mask,
@@ -148,7 +143,6 @@ namespace VisionEditCV.Processing
             using Mat img = BitmapToMat(image);
             using Mat imgBgr = new Mat();
 
-            // Ensure BGR 3-channel
             if (img.NumberOfChannels == 4)
                 CvInvoke.CvtColor(img, imgBgr, ColorConversion.Bgra2Bgr);
             else
@@ -157,10 +151,8 @@ namespace VisionEditCV.Processing
             byte[,] binaryMask = ResizeAndThresholdMask(mask, imgBgr.Width, imgBgr.Height);
             using Mat maskMat = BuildMaskMat(binaryMask, imgBgr.Width, imgBgr.Height);
 
-            // Process the full image, then copy only masked pixels back
             Mat processed = imgBgr.Clone();
 
-            // B&W conversion
             if (blackAndWhite)
             {
                 using Mat gray = new Mat();
@@ -171,13 +163,11 @@ namespace VisionEditCV.Processing
                 processed = grayBgr.Clone();
             }
 
-            // Brightness & contrast: convertScaleAbs(alpha=contrast, beta=brightness)
             using Mat adjusted = new Mat();
             CvInvoke.ConvertScaleAbs(processed, adjusted, contrast, brightness);
             processed.Dispose();
             processed = adjusted.Clone();
 
-            // Tint
             if (tintStrength > 0f)
             {
                 using Mat tintLayer = new Mat(processed.Rows, processed.Cols,
@@ -191,7 +181,6 @@ namespace VisionEditCV.Processing
                 processed = tinted.Clone();
             }
 
-            // Composite: copy processed pixels onto original only where mask is set
             using Mat result = imgBgr.Clone();
             processed.CopyTo(result, maskMat);
             processed.Dispose();
@@ -201,11 +190,6 @@ namespace VisionEditCV.Processing
 
         // ── Effect 2: Artistic Style ──────────────────────────────────────────
 
-        /// <summary>
-        /// Returns the bounding rectangle of all non-zero pixels in a binary mask,
-        /// padded by <paramref name="pad"/> pixels and clamped to [0, w) x [0, h).
-        /// Returns Rectangle.Empty if the mask is entirely zero.
-        /// </summary>
         private static Rectangle MaskBoundingRect(byte[,] binaryMask, int w, int h, int pad = 8)
         {
             int minX = w, minY = h, maxX = 0, maxY = 0;
@@ -226,10 +210,6 @@ namespace VisionEditCV.Processing
             return new Rectangle(rx, ry, rw, rh);
         }
 
-        /// <summary>
-        /// Applies cv2.stylization only on the mask bounding-box crop, then pastes
-        /// the result back. sigmaS: spatial filter extent (1–200). sigmaR: color range (0.01–1.0).
-        /// </summary>
         public static Bitmap StylizeMasked(Bitmap image, float[,] mask, int sigmaS, float sigmaR)
         {
             using Mat img = BitmapToMat(image);
@@ -246,7 +226,6 @@ namespace VisionEditCV.Processing
 
             using Mat maskMat = BuildMaskMat(binaryMask, imgBgr.Width, imgBgr.Height);
 
-            // Crop, stylize only the ROI, paste back
             using Mat crop = new Mat(imgBgr, roi);
             using Mat styledCrop = new Mat();
             CvInvoke.Stylization(crop, styledCrop, sigmaS, sigmaR);
@@ -258,10 +237,6 @@ namespace VisionEditCV.Processing
             return MatToBitmap(result);
         }
 
-        /// <summary>
-        /// Applies cv2.pencilSketch only on the mask bounding-box crop, then pastes
-        /// the result back. sigmaS: spatial filter extent (1–200). shadeFactor: shade intensity.
-        /// </summary>
         public static Bitmap PencilSketchMasked(Bitmap image, float[,] mask, int sigmaS, float shadeFactor)
         {
             using Mat img = BitmapToMat(image);
@@ -278,7 +253,6 @@ namespace VisionEditCV.Processing
 
             using Mat maskMat = BuildMaskMat(binaryMask, imgBgr.Width, imgBgr.Height);
 
-            // Crop, sketch only the ROI, paste back
             using Mat crop = new Mat(imgBgr, roi);
             using Mat gray = new Mat();
             using Mat colorSketch = new Mat();
@@ -293,10 +267,6 @@ namespace VisionEditCV.Processing
 
         // ── Effect 3: Sticker Generation ─────────────────────────────────────
 
-        /// <summary>
-        /// Extracts the masked foreground as a BGRA bitmap with transparent background.
-        /// Border contour and drop shadow are drawn on top.
-        /// </summary>
         public static Bitmap ExtractSticker(
             Bitmap image,
             float[,] mask,
