@@ -6,28 +6,20 @@ using VisionEditCV.Models;
 
 namespace VisionEditCV.Api
 {
-    
-    
-    
-    
     public class Sam3Client
     {
         public string BaseUrl { get; set; } =
             "https://8000-dep-01khgcb8hf1kcdc87pbkv4bfz1-d.cloudspaces.litng.ai";
 
-        
         private static readonly HttpClient _http = new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(10)
         };
 
-        
         private static readonly HttpClient _healthHttp = new HttpClient
         {
             Timeout = TimeSpan.FromSeconds(15)
         };
-
-        
 
         private static string EncodeImageToBase64(string imagePath)
         {
@@ -35,23 +27,11 @@ namespace VisionEditCV.Api
             return Convert.ToBase64String(bytes);
         }
 
-        
-        
-        
-        
-        
-        
-        
         private static SegmentationResult ParseResponse(string json)
         {
             var result = new SegmentationResult();
             var root = JObject.Parse(json);
 
-            
-            
-            
-            
-            
             var masksToken = root["masks"];
             if (masksToken is JArray masksArray)
             {
@@ -60,22 +40,19 @@ namespace VisionEditCV.Api
                     if (maskToken is not JArray outerArr) continue;
 
                     JArray rows;
-                    
+
                     if (outerArr.Count == 1 && outerArr[0] is JArray innerArr
                         && innerArr.Count > 0 && innerArr[0] is JArray)
                     {
-                        
                         rows = innerArr;
                     }
                     else if (outerArr.Count > 0 && outerArr[0] is JArray firstRow
                              && firstRow.Count > 0 && firstRow[0] is JArray)
                     {
-                        
                         rows = (JArray)outerArr[0];
                     }
                     else
                     {
-                        
                         rows = outerArr;
                     }
 
@@ -92,7 +69,6 @@ namespace VisionEditCV.Api
                 }
             }
 
-            
             var boxesToken = root["boxes"];
             if (boxesToken is JArray boxesArray)
             {
@@ -103,7 +79,6 @@ namespace VisionEditCV.Api
                 }
             }
 
-            
             var scoresToken = root["scores"];
             if (scoresToken is JArray scoresArray)
             {
@@ -133,7 +108,6 @@ namespace VisionEditCV.Api
             string url = $"{NormalizedUrl()}{endpoint}";
             string jsonBody = JsonConvert.SerializeObject(payload);
 
-            
             string logBody = System.Text.RegularExpressions.Regex.Replace(
                 jsonBody, @"""image""\s*:\s*""[^""]{50}[^""]*""",
                 m => m.Value.Substring(0, m.Value.IndexOf('"', m.Value.IndexOf("image") + 7) + 51) + "...[truncated]\"");

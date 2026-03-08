@@ -8,7 +8,6 @@ namespace VisionEditCV
 {
     public partial class MainForm : Form
     {
-        
         internal static readonly Color _BgMain = Color.FromArgb(18, 18, 18);
         internal static readonly Color _BgPanel = Color.FromArgb(24, 24, 24);
         internal static readonly Color _BgButton = Color.FromArgb(32, 34, 38);
@@ -17,17 +16,14 @@ namespace VisionEditCV
         internal static readonly Color _TextDim = Color.FromArgb(140, 140, 160);
         internal static readonly Color _BorderColor = Color.FromArgb(45, 45, 55);
 
-        
         private readonly Sam3Client _client = new Sam3Client();
         private SegmentationResult? _lastResult;
         private string? _currentImagePath;
         private CancellationTokenSource? _healthCts;
 
-        
         private CancellationTokenSource? _previewCts;
         private readonly SemaphoreSlim _previewSem = new SemaphoreSlim(1, 1);
 
-        
         private string _activeEffect = "";
         private bool _comparingOriginal = false;
         private bool _pixelateMode = true;
@@ -39,15 +35,12 @@ namespace VisionEditCV
         private Bitmap? _stickerCustomBg = null;
         private Bitmap? _preEffectSnapshot = null; 
 
-        
         private readonly List<string> _appliedEffects = new();
 
-        
         private bool _rightPanelExpanded = true;
         private const int RightPanelFullWidth = 360;
         private const int RightPanelCollapsedWidth = 26;
 
-        
         private const int WM_NCHITTEST = 0x84;
         private const int HTCLIENT = 0x1;
         private const int HTCAPTION = 0x2;
@@ -89,28 +82,18 @@ namespace VisionEditCV
             base.WndProc(ref m);
         }
 
-        
-        
-        
-
         public MainForm()
         {
             InitializeComponent();
             PostInit();
         }
 
-        
-        
-        
-        
         private void PostInit()
         {
-            
             this.FormBorderStyle = FormBorderStyle.None;
             this.DoubleBuffered = true;
             this.SetStyle(ControlStyles.ResizeRedraw, true);
 
-            
             _txtServerUrl.Text = _client.BaseUrl;
 
             WireEvents();
@@ -126,13 +109,11 @@ namespace VisionEditCV
                 }
             };
 
-            
             TopBarResize(_topBar, EventArgs.Empty);
             EffectSubPanelResize(_effectSubPanel, EventArgs.Empty);
-            
+
             SetCanvasMode(CanvasMode.BoundingBox);
 
-            
             _ = StartServerAsync();
         }
 
@@ -169,13 +150,8 @@ namespace VisionEditCV
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
 
-        
-        
-        
-
         private void WireEvents()
         {
-            
             _btnChangeImage.Click += (s, e) => OpenImageFile();
             _btnClearMasks.Click += (s, e) => ClearAllMasks();
             _btnHideMasks.Click += (s, e) =>
@@ -193,7 +169,6 @@ namespace VisionEditCV
                 if (_canvas.OriginalBitmap == null) OpenImageFile();
             };
 
-            
             _btnColorGrading.Click += (s, e) => ActivateEffect("ColorGrading");
             _btnArtisticStyle.Click += (s, e) => ActivateEffect("Artistic");
             _btnStickerGen.Click += (s, e) => ActivateEffect("Sticker");
@@ -201,21 +176,16 @@ namespace VisionEditCV
             _btnPortrait.Click += (s, e) => ActivateEffect("Portrait");
             _btnGrayscale.Click += (s, e) => ActivateEffect("Grayscale");
 
-            
             _btnApplyEffect.Click += (s, e) => ApplyCurrentEffect();
             _btnResetEffect.Click += (s, e) => ResetCurrentEffect();
 
-            
             _btnResetAll.Click += (s, e) => ResetAllEffects();
 
-            
             _btnBBox.Click += (s, e) => SetCanvasMode(CanvasMode.BoundingBox);
             _btnPrompt.Click += (s, e) => SetCanvasMode(CanvasMode.Prompt);
 
-            
             _btnSegment.Click += async (s, e) => await RunSegmentation();
 
-            
             _btnCompare.Click += (s, e) =>
             {
                 _comparingOriginal = !_comparingOriginal;
@@ -224,10 +194,8 @@ namespace VisionEditCV
                 _btnCompare.ForeColor = _comparingOriginal ? _BgMain : _TextMain;
             };
 
-            
             _btnSave.Click += (s, e) => SaveImage();
 
-            
             _canvas.MaskSelectionChanged += (s, e) =>
             {
                 _maskList.SetRowSelected(e.MaskIndex, e.Selected);
@@ -242,7 +210,6 @@ namespace VisionEditCV
             _canvas.BBoxChanged += (s, e) => { };
             _canvas.MouseDown += (s, e) => _canvas.Focus();
 
-            
             WireSlider(_cgTintStrength);
             WireSlider(_cgBrightness);
             WireSlider(_cgContrast);
@@ -250,14 +217,12 @@ namespace VisionEditCV
             _btnCgBg.Click += (s, e) => SetCgMode(targetBg: true);
             _cgTintSwatch.ColorChanged += (s, e) => TriggerLivePreview();
 
-            
             WireSlider(_artSigmaS);
             WireSlider(_artSigmaR);
             WireSlider(_artShade);
             _btnArtStylize.Click += (s, e) => SetArtMode(stylize: true);
             _btnArtPencil.Click += (s, e) => SetArtMode(stylize: false);
 
-            
             WireSlider(_stScale);
             WireSlider(_stRotation);
             WireSlider(_stThickness);
@@ -278,15 +243,12 @@ namespace VisionEditCV
             _stBgColorSwatch.ColorChanged += (s, e) => TriggerLivePreview();
             _btnStickerUploadBg.Click += (s, e) => PickStickerBackground();
 
-            
             WireSlider(_ptBlurStrength);
             WireSlider(_ptFeatherAmount);
 
-            
             _btnGsFg.Click += (s, e) => SetGsMode(targetBg: false);
             _btnGsBg.Click += (s, e) => SetGsMode(targetBg: true);
 
-            
             _btnPixelMode.Click += (s, e) =>
             {
                 _pixelateMode = true;
@@ -317,10 +279,8 @@ namespace VisionEditCV
                 TriggerLivePreview();
             };
 
-            
             _btnStartServer.Click += async (s, e) =>
             {
-                
                 if (_healthCts != null)
                 {
                     _healthCts.Cancel();
@@ -330,7 +290,7 @@ namespace VisionEditCV
                     SetStartServerButton(connecting: false, online: false);
                     return;
                 }
-                
+
                 await StartServerAsync();
             };
             _txtServerUrl.TextChanged += (s, e) => _client.BaseUrl = _txtServerUrl.Text.Trim();
@@ -338,7 +298,6 @@ namespace VisionEditCV
 
         private void WireResizeHandlers()
         {
-            
             _serverPanel.Resize += (s, e) =>
             {
                 int w = _serverPanel.ClientSize.Width - _serverPanel.Padding.Horizontal;
@@ -346,7 +305,6 @@ namespace VisionEditCV
                 _lblServerStatus.Width = w;
             };
 
-            
             Shown += (s, e) => BeginInvoke(() =>
             {
                 EffectSubPanelResize(_effectSubPanel, EventArgs.Empty);
@@ -354,7 +312,6 @@ namespace VisionEditCV
                 TitleBarChipsResize(_windowTitleBar, EventArgs.Empty);
             });
 
-            
             Resize += (s, e) =>
             {
                 TopBarResize(_topBar, EventArgs.Empty);
@@ -368,10 +325,6 @@ namespace VisionEditCV
         {
             sc.ValueChanged += (s, e) => TriggerLivePreview();
         }
-
-        
-        
-        
 
         private void OpenImageFile()
         {
@@ -416,7 +369,6 @@ namespace VisionEditCV
 
         private void RightPanelResize(object sender, EventArgs e)
         {
-            
             _btnToggleRight.Location = new Point(0, 0);
             _btnToggleRight.Size = new Size(26, _rightPanel.Height);
         }
@@ -432,27 +384,20 @@ namespace VisionEditCV
 
             bool isBbox = mode == CanvasMode.BoundingBox;
 
-            
             _btnBBox.BackColor = isBbox ? Color.FromArgb(14, 48, 52) : Color.Transparent;
             _btnBBox.ForeColor = isBbox ? _Cyan : _TextMain;
             _btnBBox.FlatAppearance.BorderSize = isBbox ? 2 : 0;
             _btnBBox.FlatAppearance.BorderColor = _Cyan;
 
-            
             _btnPrompt.BackColor = isBbox ? Color.Transparent : Color.FromArgb(14, 48, 52);
             _btnPrompt.ForeColor = isBbox ? _TextMain : _Cyan;
             _btnPrompt.FlatAppearance.BorderSize = isBbox ? 0 : 2;
             _btnPrompt.FlatAppearance.BorderColor = _Cyan;
 
-            
             _promptBox.Visible = !isBbox;
 
             _canvas.Invalidate();
         }
-
-        
-        
-        
 
         private async Task RunSegmentation()
         {
@@ -539,10 +484,6 @@ namespace VisionEditCV
             }
         }
 
-        
-        
-        
-
         private void SetArtMode(bool stylize)
         {
             _artStylizeMode = stylize;
@@ -558,16 +499,16 @@ namespace VisionEditCV
         private void SetStickerBgMode(string mode)
         {
             _stickerBgMode = mode;
-            
+
             int idx = mode switch { "Solid" => 1, "Image" => 2, "Transparent" => 3, _ => 0 };
             if (_cmbStBgMode.SelectedIndex != idx)
                 _cmbStBgMode.SelectedIndex = idx;
-            
+
             _stBgColorSwatch.Visible = false;
             _btnStickerUploadBg.Visible = false;
-            
+
             EffectSubPanelResize(_effectSubPanel, EventArgs.Empty);
-            
+
             _stBgColorSwatch.Visible = mode == "Solid";
             _btnStickerUploadBg.Visible = mode == "Image";
             TriggerLivePreview();
@@ -595,7 +536,6 @@ namespace VisionEditCV
 
         private void DeactivateEffect()
         {
-            
             _previewCts?.Cancel();
             _previewCts?.Dispose();
             _previewCts = null;
@@ -619,7 +559,6 @@ namespace VisionEditCV
             _btnResetEffect.Visible = false;
             _effectSubPanel.Visible = false;
 
-            
             _canvas.SetProcessedBitmap(null);
             _canvas.SetDisplayMaskOverride(null);
         }
@@ -633,7 +572,6 @@ namespace VisionEditCV
                 return;
             }
 
-            
             if (_activeEffect == effect)
             {
                 DeactivateEffect();
@@ -663,7 +601,6 @@ namespace VisionEditCV
             };
             if (activeBtn != null)
             {
-                
                 activeBtn.BackColor = Color.FromArgb(14, 48, 52);
                 activeBtn.ForeColor = _Cyan;
                 activeBtn.FlatAppearance.BorderSize = 2;
@@ -687,33 +624,25 @@ namespace VisionEditCV
 
             if (activePanel != null) activePanel.Visible = true;
 
-            
             _lblNoEffect.Visible = activePanel == null;
 
             bool showButtons = activePanel != null;
 
-            
             _effectSubPanel.Visible = showButtons;
 
-            
             _btnApplyEffect.Visible = showButtons;
             _btnResetEffect.Visible = showButtons;
 
-            
             if (showButtons)
             {
                 _effectSubPanel.PerformLayout();
                 EffectSubPanelResize(_effectSubPanel, EventArgs.Empty);
-                
+
                 BeginInvoke(() => EffectSubPanelResize(_effectSubPanel, EventArgs.Empty));
             }
 
             TriggerLivePreview();
         }
-
-        
-        
-        
 
         private void ResetCurrentEffect()
         {
@@ -760,7 +689,6 @@ namespace VisionEditCV
             if (string.IsNullOrEmpty(_activeEffect)) return;
             if (_canvas.OriginalBitmap == null) return;
 
-            
             _previewCts?.Cancel();
             _previewCts?.Dispose();
             _previewCts = null;
@@ -771,13 +699,10 @@ namespace VisionEditCV
 
             if (selectedMasks.Count == 0) return;
 
-            
             var effect = _activeEffect;
             var args = CaptureEffectArgs();
             var srcFull = (Bitmap)_canvas.OriginalBitmap.Clone();
 
-            
-            
             if (effect == "Artistic")
             {
                 int longestSide = Math.Max(srcFull.Width, srcFull.Height);
@@ -785,8 +710,6 @@ namespace VisionEditCV
                     args = args with { ArtSigmaSScale = (float)longestSide / PreviewMaxDim };
             }
 
-            
-            
             if (effect == "Portrait" || effect == "PixelBlur")
             {
                 int longestSide = Math.Max(srcFull.Width, srcFull.Height);
@@ -800,7 +723,6 @@ namespace VisionEditCV
                 }
             }
 
-            
             _btnApplyEffect.Enabled = false;
             SetLoading(true, "Applying effect...");
 
@@ -829,7 +751,6 @@ namespace VisionEditCV
                 _btnApplyEffect.Enabled = true;
             }
 
-            
             if (_activeEffect == "Sticker")
             {
                 _preEffectSnapshot?.Dispose();
@@ -837,7 +758,6 @@ namespace VisionEditCV
             }
             else
             {
-                
                 _preEffectSnapshot?.Dispose();
                 _preEffectSnapshot = null;
             }
@@ -845,8 +765,6 @@ namespace VisionEditCV
             _canvas.CommitProcessedAsOriginal(result);
             result.Dispose();
 
-            
-            
             if (_activeEffect == "Sticker")
             {
                 float scale = args.StScale / 10f;
@@ -863,15 +781,9 @@ namespace VisionEditCV
             _appliedEffects.Add(GetEffectDisplayName(_activeEffect));
             RebuildAppliedEffectsChips();
 
-            
             DeactivateEffect();
         }
 
-        
-        
-        
-
-        
         private static readonly HashSet<string> _heavyEffects = new() { "Artistic", "Sticker", "Portrait", "PixelBlur" };
         private const int PreviewMaxDim = 900;
         private const int DebounceMs = 30;
@@ -882,13 +794,11 @@ namespace VisionEditCV
             if (string.IsNullOrEmpty(_activeEffect)) return;
             if (_canvas.OriginalBitmap == null) return;
 
-            
             _previewCts?.Cancel();
             _previewCts?.Dispose();
             _previewCts = new CancellationTokenSource();
             var token = _previewCts.Token;
 
-            
             var selectedMasks = new List<float[,]>();
             for (int i = 0; i < _canvas.Masks.Count; i++)
                 if (_canvas.MaskSelected[i]) selectedMasks.Add(_canvas.Masks[i]);
@@ -912,8 +822,6 @@ namespace VisionEditCV
                     await Task.Delay(debounce, token);
                     token.ThrowIfCancellationRequested();
 
-                    
-                    
                     await _previewSem.WaitAsync(token);
                     try
                     {
@@ -921,8 +829,6 @@ namespace VisionEditCV
 
                         Bitmap src = heavy ? ScaleForPreview(srcFull, PreviewMaxDim) : srcFull;
 
-                        
-                        
                         var renderArgs = (effect == "Sticker" && !ReferenceEquals(src, srcFull))
                             ? args with { StThicknessScale = (float)src.Width / srcFull.Width }
                             : args;
@@ -943,9 +849,6 @@ namespace VisionEditCV
                         if (heavy && !ReferenceEquals(src, srcFull)) src.Dispose();
                         token.ThrowIfCancellationRequested();
 
-                        
-                        
-                        
                         List<float[,]>? transformedMasks = null;
                         if (effect == "Sticker")
                         {
@@ -978,8 +881,6 @@ namespace VisionEditCV
             }, token);
         }
 
-        
-        
         private static Bitmap ScaleForPreview(Bitmap src, int maxDim)
         {
             if (src.Width <= maxDim && src.Height <= maxDim) return src;
@@ -992,10 +893,6 @@ namespace VisionEditCV
             g.DrawImage(src, 0, 0, w, h);
             return bmp;
         }
-
-        
-        
-        
 
         private record EffectArgs(
             Color TintColor, float TintStrength, int Brightness, float Contrast,
@@ -1042,10 +939,6 @@ namespace VisionEditCV
             PortraitScale: 1f,
             GsTargetBg: _gsTargetBgMode
         );
-
-        
-        
-        
 
         private Bitmap? ApplyEffectArgs(string effect, Bitmap image, float[,] mask, EffectArgs a)
         {
@@ -1096,7 +989,6 @@ namespace VisionEditCV
                 scaleFactor: a.StScale / 10f,
                 rotationAngle: a.StRotation);
 
-            
             if (a.StickerTransparentBg)
             {
                 a.StickerImageBg?.Dispose();
@@ -1110,8 +1002,6 @@ namespace VisionEditCV
                 bg = ImageEffects.SolidColorBackground(a.StickerSolidColor, image.Width, image.Height);
             else if (a.StickerImageBg != null)
             {
-                
-                
                 bg = new Bitmap(image.Width, image.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
                 using var g2 = Graphics.FromImage(bg);
                 g2.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
@@ -1157,10 +1047,6 @@ namespace VisionEditCV
             return inv;
         }
 
-        
-        
-        
-
         private void PickStickerBackground()
         {
             using var dlg = new OpenFileDialog
@@ -1176,10 +1062,6 @@ namespace VisionEditCV
             }
         }
 
-        
-        
-        
-
         private static string GetEffectDisplayName(string effect) => effect switch
         {
             "ColorGrading" => "Color Grading",
@@ -1193,7 +1075,6 @@ namespace VisionEditCV
 
         private void RebuildAppliedEffectsChips()
         {
-            
             foreach (Control c in _appliedEffectsPanel.Controls)
                 c.Dispose();
             _appliedEffectsPanel.Controls.Clear();
@@ -1220,17 +1101,12 @@ namespace VisionEditCV
                 _appliedEffectsPanel.Controls.Add(chip);
             }
 
-            
-            
-            
             BeginInvoke(() =>
             {
                 TitleBarChipsResize(_windowTitleBar, EventArgs.Empty);
                 _appliedEffectsPanel.Visible = true;
                 _btnResetAll.Visible = true;
-                
-                
-                
+
                 _appliedEffectsPanel.BringToFront();
                 _btnResetAll.BringToFront();
                 _windowTitleBar.Refresh();
@@ -1239,7 +1115,6 @@ namespace VisionEditCV
 
         private void ResetAllEffects()
         {
-            
             _previewCts?.Cancel();
             _previewCts?.Dispose();
             _previewCts = null;
@@ -1249,7 +1124,6 @@ namespace VisionEditCV
             _preEffectSnapshot = null;
             RebuildAppliedEffectsChips();
 
-            
             if (_currentImagePath != null)
             {
                 _canvas.RestoreOriginalFromFile(_currentImagePath);
@@ -1258,10 +1132,6 @@ namespace VisionEditCV
                 TriggerLivePreview();
             }
         }
-
-        
-        
-        
 
         private void SaveImage()
         {
@@ -1323,10 +1193,6 @@ namespace VisionEditCV
             }
         }
 
-        
-        
-        
-
         private void SetLoading(bool loading, string message = "Segmenting... (server may take 6–7 min to start)")
         {
             if (InvokeRequired) { Invoke(() => SetLoading(loading, message)); return; }
@@ -1335,13 +1201,8 @@ namespace VisionEditCV
             _btnSegment.Enabled = !loading;
         }
 
-        
-        
-        
-
         private async Task StartServerAsync()
         {
-            
             if (_healthCts != null)
             {
                 _healthCts.Cancel();
@@ -1404,7 +1265,6 @@ namespace VisionEditCV
                 _btnStartServer.ForeColor = Color.White;
             }
 
-            
             TopBarResize(_topBar, EventArgs.Empty);
         }
 
@@ -1414,8 +1274,6 @@ namespace VisionEditCV
             _lblServerStatus.Text = message;
             _lblServerStatus.ForeColor = color;
         }
-
-        
 
         private void EffectSubPanelResize(object sender, EventArgs e)
         {
@@ -1428,20 +1286,19 @@ namespace VisionEditCV
             const int minBtnW = 60;
             const int minSlidW = 120;
 
-            
             int cy = panel.Height / 2;
             const int applyW = 68;
             const int resetW = 68;
             const int btnGap = 6;
             const int btnH = 40;
-            
+
             const int btnColW = 96;
             int stackH = btnH * 2 + btnGap;
             _btnApplyEffect.Width = applyW;
             _btnApplyEffect.Height = btnH;
             _btnResetEffect.Width = resetW;
             _btnResetEffect.Height = btnH;
-            
+
             int btnLeft = panel.Width - btnColW + (btnColW - applyW) / 2;
             _btnApplyEffect.Left = btnLeft;
             _btnResetEffect.Left = btnLeft;
@@ -1449,7 +1306,7 @@ namespace VisionEditCV
             _btnResetEffect.Top = _btnApplyEffect.Top + btnH + btnGap;
 
             int availH = panel.Height - panel.Padding.Vertical;
-            
+
             int flowW = panel.Width - btnColW - pad * 2;
 
             foreach (var flow in new FlowLayoutPanel[] { _cgFlow, _artFlow, _stFlow, _pbFlow, _ptFlow, _gsFlow })
@@ -1466,20 +1323,18 @@ namespace VisionEditCV
                 int count = groups.Count;
                 if (count == 0) continue;
 
-                
                 int[] natural = groups.Select(grp =>
                 {
                     var vb = grp.Controls.OfType<DarkButton>().Where(b => b.Visible).ToList();
                     var cmb = grp.Controls.OfType<ComboBox>().FirstOrDefault();
                     if (cmb != null)
                     {
-                        
                         int maxTextW = cmb.Items.Count > 0
                             ? cmb.Items.Cast<object>()
                                 .Max(it => TextRenderer.MeasureText(it?.ToString() ?? "", cmb.Font).Width)
                             : 60;
                         int cmbNatural = maxTextW + 10 + 26 + 8; 
-                        
+
                         var hasSideCtrl = grp.Controls.OfType<ColorSwatch>().Any()
                                        || grp.Controls.OfType<DarkButton>().Any(b => b.Name == "_btnStickerUploadBg");
                         int extraW = hasSideCtrl ? 8 + 34 : 0;
@@ -1502,14 +1357,13 @@ namespace VisionEditCV
                 for (int i = 0; i < groups.Count; i++)
                 {
                     var grp = groups[i];
-                    
+
                     bool isComboGroup = grp.Controls.OfType<ComboBox>().Any();
                     int grpW = natural[i] + (isComboGroup ? 0 : extra);
                     grp.Width = grpW;
                     grp.Height = availH;
                     grp.Margin = new Padding(0, 0, i < count - 1 ? gap : 0, 0);
 
-                    
                     var lbl = grp.Controls.OfType<Label>().FirstOrDefault();
                     var slider = grp.Controls.OfType<SliderControl>().FirstOrDefault();
                     var combo = grp.Controls.OfType<ComboBox>().FirstOrDefault();
@@ -1530,17 +1384,15 @@ namespace VisionEditCV
                         : 0;
 
                     int innerContentH = Math.Max(slidH, Math.Max(btnBlockH, Math.Max(comboH, swatchH)));
-                    
+
                     int innerH = lblH + (lblH > 0 && innerContentH > 0 ? 4 : 0) + innerContentH;
                     int topOff = Math.Max(0, (availH - innerH) / 2);
 
-                    
                     if (lbl != null)
                         lbl.Top = topOff;
 
                     int contentY = topOff + lblH + (lblH > 0 ? 4 : 0);
 
-                    
                     if (slider != null)
                     {
                         slider.Width = grpW - 2;
@@ -1548,10 +1400,8 @@ namespace VisionEditCV
                         slider.Top = contentY;
                     }
 
-                    
                     if (combo != null)
                     {
-                        
                         var uploadBtn2 = grp.Controls.OfType<DarkButton>().FirstOrDefault(b => b.Name == "_btnStickerUploadBg");
                         var swatchAny = grp.Controls.OfType<ColorSwatch>().FirstOrDefault();
                         bool hasSide = swatchAny != null || uploadBtn2 != null;
@@ -1559,13 +1409,13 @@ namespace VisionEditCV
                         combo.Width = Math.Max(60, grpW - rightReserve);
                         combo.Left = 0;
                         combo.Top = contentY;
-                        
+
                         if (swatchAny != null)
                         {
                             swatchAny.Left = combo.Width + 8;
                             swatchAny.Top = contentY + (combo.Height - swatchAny.Height) / 2;
                         }
-                        
+
                         if (uploadBtn2 != null)
                         {
                             uploadBtn2.Left = combo.Width + 8;
@@ -1574,7 +1424,6 @@ namespace VisionEditCV
                     }
                     else
                     {
-                        
                         if (swatch != null)
                         {
                             swatch.Left = 0;
@@ -1582,7 +1431,6 @@ namespace VisionEditCV
                         }
                     }
 
-                    
                     if (visBtns.Count > 0)
                     {
                         int bW = Math.Max(40, (grpW - bGap * (cols - 1)) / cols);
@@ -1609,13 +1457,9 @@ namespace VisionEditCV
         private void TitleBarChipsResize(object? sender, EventArgs e)
         {
             if (sender is not Panel bar) return;
-            
+
             if (_appliedEffects.Count == 0) return;
 
-            
-            
-            
-            
             const int padL = 12;
             const int gap = 8;
             const int padR = 24; 
@@ -1632,14 +1476,12 @@ namespace VisionEditCV
             int x = titleW + padL;
             int cy = bar.ClientSize.Height / 2;
 
-            
             int chipsW = Math.Max(0, rightEdge - x - gap - _btnResetAll.Width);
             _appliedEffectsPanel.Width = chipsW;
             _appliedEffectsPanel.Height = chipH;
             _appliedEffectsPanel.Left = x;
             _appliedEffectsPanel.Top = cy - chipH / 2;
 
-            
             _btnResetAll.Left = x + chipsW + gap;
             _btnResetAll.Top = cy - _btnResetAll.Height / 2;
         }
@@ -1647,7 +1489,7 @@ namespace VisionEditCV
         private void TitleBarPaint(object sender, PaintEventArgs e)
         {
             if (sender is not Control bar) return;
-            
+
             using var pen = new Pen(Color.FromArgb(0, 160, 180), 1);
             e.Graphics.DrawLine(pen, 0, bar.Height - 1, bar.Width, bar.Height - 1);
         }
@@ -1660,7 +1502,6 @@ namespace VisionEditCV
             int pad = 24;
             int gap = 10;
 
-            
             int x = pad;
             _lblSelMode.Left = x;
             _lblSelMode.Width = 36;
@@ -1676,7 +1517,6 @@ namespace VisionEditCV
 
             int leftEdge = x;
 
-            
             _btnStartServer.Width = TextRenderer.MeasureText(_btnStartServer.Text, _btnStartServer.Font).Width + 72;
             _btnStartServer.Left = w - pad - _btnStartServer.Width;
 
@@ -1685,11 +1525,9 @@ namespace VisionEditCV
 
             int rightEdge = _btnSegment.Left - pad;
 
-            
             _promptBox.Left = leftEdge;
             _promptBox.Width = Math.Max(120, rightEdge - leftEdge);
 
-            
             foreach (Control c in bar.Controls)
             {
                 if (c == _serverPanel) continue;
@@ -1724,27 +1562,22 @@ namespace VisionEditCV
 
         private void _btnGrayscale_Click(object sender, EventArgs e)
         {
-
         }
 
         private void _btnCompare_Click(object sender, EventArgs e)
         {
-
         }
 
         private void _lblSelMode_Click(object sender, EventArgs e)
         {
-
         }
 
         private void _lblSelMode_Click_1(object sender, EventArgs e)
         {
-
         }
 
         private void _btnColorGrading_Click(object sender, EventArgs e)
         {
-
         }
     }
 }

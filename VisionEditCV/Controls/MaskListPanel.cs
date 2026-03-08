@@ -1,14 +1,8 @@
 namespace VisionEditCV.Controls
 {
-    
-    
-    
-    
-    
     [System.ComponentModel.DesignerCategory("Component")]
     public class MaskListPanel : Panel
     {
-        
         private static readonly Color BgColor     = Color.FromArgb(20, 20, 20);
         private static readonly Color CardBg      = Color.FromArgb(32, 33, 48);
         private static readonly Color CardHover   = Color.FromArgb(42, 44, 64);
@@ -17,10 +11,8 @@ namespace VisionEditCV.Controls
         private static readonly Color TextColor   = Color.FromArgb(220, 220, 220);
         private static readonly Color AccentCyan  = Color.FromArgb(0, 229, 255);
 
-        
         private readonly List<MaskCard> _rows = new();
 
-        
         public event EventHandler<MaskSelectedEventArgs>? MaskSelectionChanged;
 
         public MaskListPanel()
@@ -30,13 +22,11 @@ namespace VisionEditCV.Controls
             Padding    = new Padding(8, 0, 8, 4);
         }
 
-        
-
         public void Populate(List<Color> colors, List<float> scores)
         {
             SuspendLayout();
             ClearRows();
-            
+
             AutoScrollPosition = new Point(0, 0);
             for (int i = 0; i < colors.Count; i++)
             {
@@ -48,7 +38,7 @@ namespace VisionEditCV.Controls
             }
             ResumeLayout(false);
             LayoutRows();
-            
+
             AutoScrollPosition = new Point(0, 0);
         }
 
@@ -63,15 +53,12 @@ namespace VisionEditCV.Controls
             _rows.Clear();
         }
 
-        
         public void SetRowSelected(int index, bool selected)
         {
             if (index < 0 || index >= _rows.Count) return;
             _rows[index].SetCheckedSilent(selected);
             _rows[index].Invalidate();
         }
-
-        
 
         private void LayoutRows()
         {
@@ -92,14 +79,10 @@ namespace VisionEditCV.Controls
             LayoutRows();
         }
 
-        
-
         private void OnRowCheckChanged(object? sender, MaskSelectedEventArgs e)
         {
             MaskSelectionChanged?.Invoke(this, e);
         }
-
-        
 
         private class MaskCard : Control
         {
@@ -130,13 +113,11 @@ namespace VisionEditCV.Controls
                 var g = e.Graphics;
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-                
                 var bg = _checked ? CardSelected : (_hovering ? CardHover : CardBg);
                 using var bgBrush = new SolidBrush(bg);
                 var rect = new Rectangle(0, 0, Width - 1, Height - 1);
                 GraphicsExtensions.FillRoundedRect(g, bgBrush, rect, 8);
 
-                
                 if (_checked)
                 {
                     using var borderPen = new Pen(CardSelectedBorder, 2f);
@@ -148,7 +129,6 @@ namespace VisionEditCV.Controls
                     GraphicsExtensions.DrawRoundedRect(g, borderPen, rect, 8);
                 }
 
-                
                 int swatchSize = 24;
                 int swatchX = 10;
                 int swatchY = (Height - swatchSize) / 2;
@@ -157,7 +137,6 @@ namespace VisionEditCV.Controls
                 using var ringPen = new Pen(Color.FromArgb(80, 255, 255, 255), 1.2f);
                 g.DrawEllipse(ringPen, swatchX, swatchY, swatchSize, swatchSize);
 
-                
                 int textX = swatchX + swatchSize + 10;
                 string label = $"Mask {_index + 1}";
                 using var labelFont  = new Font("Segoe UI", 10f, FontStyle.Bold);

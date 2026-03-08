@@ -1,14 +1,8 @@
 namespace VisionEditCV
 {
-    
-    
-    
-    
-    
     [System.ComponentModel.DesignerCategory("Component")]
     public class DarkComboBox : ComboBox
     {
-        
         private static readonly Color BgNormal  = Color.FromArgb(30, 32, 36);
         private static readonly Color BgHover   = Color.FromArgb(42, 45, 52);
         private static readonly Color BgOpen    = Color.FromArgb(22, 24, 28);
@@ -36,8 +30,6 @@ namespace VisionEditCV
                      ControlStyles.OptimizedDoubleBuffer, true);
         }
 
-        
-
         protected override void OnMouseEnter(EventArgs e)
         {
             _hovering = true;
@@ -52,8 +44,6 @@ namespace VisionEditCV
             base.OnMouseLeave(e);
         }
 
-        
-
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
@@ -66,28 +56,22 @@ namespace VisionEditCV
 
             var rect = new RectangleF(0, 0, Width - 1, Height - 1);
 
-            
             using var fillPath = RoundedRect(rect, CornerRadius);
             using var fillBrush = new SolidBrush(bg);
             g.FillPath(fillBrush, fillPath);
 
-            
             float borderW = open ? 1.5f : 1f;
             using var borderPen = new Pen(borderColor, borderW);
             g.DrawPath(borderPen, fillPath);
 
-            
             const int arrowZoneW = 26;
             int arrowX = Width - arrowZoneW;
 
-            
             using var sepPen = new Pen(Color.FromArgb(55, 58, 70), 1);
             g.DrawLine(sepPen, arrowX, 6, arrowX, Height - 6);
 
-            
             DrawArrow(g, arrowX + arrowZoneW / 2, Height / 2, open, borderColor);
 
-            
             string text = SelectedIndex >= 0 && SelectedIndex < Items.Count
                 ? Items[SelectedIndex]?.ToString() ?? ""
                 : "";
@@ -106,13 +90,11 @@ namespace VisionEditCV
 
         private static void DrawArrow(Graphics g, int cx, int cy, bool open, Color color)
         {
-            
             const int hw = 5;
             const int hh = 3;
             using var pen = new Pen(color, 1.8f) { LineJoin = System.Drawing.Drawing2D.LineJoin.Round };
             if (open)
             {
-                
                 g.DrawLines(pen, new[]
                 {
                     new PointF(cx - hw, cy + hh),
@@ -122,7 +104,6 @@ namespace VisionEditCV
             }
             else
             {
-                
                 g.DrawLines(pen, new[]
                 {
                     new PointF(cx - hw, cy - hh),
@@ -131,8 +112,6 @@ namespace VisionEditCV
                 });
             }
         }
-
-        
 
         protected override void OnDrawItem(DrawItemEventArgs e)
         {
@@ -151,7 +130,6 @@ namespace VisionEditCV
 
             if (selected)
             {
-                
                 using var accentBrush = new SolidBrush(Cyan);
                 g.FillRectangle(accentBrush, e.Bounds.X, e.Bounds.Y, 3, e.Bounds.Height);
             }
@@ -168,13 +146,9 @@ namespace VisionEditCV
             g.DrawString(text, Font, textBrush, textRect, sf);
         }
 
-        
-
         protected override void OnDropDown(EventArgs e)    { Invalidate(); base.OnDropDown(e); }
         protected override void OnDropDownClosed(EventArgs e) { Invalidate(); base.OnDropDownClosed(e); }
         protected override void OnSelectedIndexChanged(EventArgs e) { Invalidate(); base.OnSelectedIndexChanged(e); }
-
-        
 
         private static System.Drawing.Drawing2D.GraphicsPath RoundedRect(RectangleF r, int radius)
         {

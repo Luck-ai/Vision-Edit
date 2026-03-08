@@ -1,25 +1,16 @@
 namespace VisionEditCV
 {
-    
-    
-    
-    
-    
     [System.ComponentModel.DesignerCategory("Component")]
     public class SliderControl : Control
     {
-        
         private static readonly Color TrackBg    = Color.FromArgb(50, 50, 72);
         private static readonly Color TrackFill  = Color.FromArgb(0, 229, 255);
         private static readonly Color ThumbColor = Color.FromArgb(0, 200, 230);
 
-        
         private int  _min   = 0;
         private int  _max   = 100;
         private int  _value = 50;
         private bool _dragging;
-
-        
 
         [System.ComponentModel.DefaultValue(0)]
         public int Minimum
@@ -51,8 +42,6 @@ namespace VisionEditCV
 
         public event EventHandler? ValueChanged;
 
-        
-
         public SliderControl()
         {
             SetStyle(ControlStyles.UserPaint        |
@@ -63,8 +52,6 @@ namespace VisionEditCV
             Cursor = Cursors.Hand;
             Size   = new Size(150, 32);
         }
-
-        
 
         private void ClampValue() => _value = Math.Clamp(_value, _min, _max);
 
@@ -80,8 +67,6 @@ namespace VisionEditCV
             return TrackLeft() + (int)(ratio * TrackWidth());
         }
 
-        
-
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
@@ -93,20 +78,16 @@ namespace VisionEditCV
             int tx   = ThumbX();
             int trad = 7; 
 
-            
             using (var br = new SolidBrush(TrackBg))
                 GraphicsExtensions.FillRoundedRect(g, br, new RectangleF(tl, ty - 3, tr - tl, 6), 3);
 
-            
             if (tx > tl)
                 using (var br = new SolidBrush(TrackFill))
                     GraphicsExtensions.FillRoundedRect(g, br, new RectangleF(tl, ty - 3, tx - tl, 6), 3);
 
-            
             using (var br = new SolidBrush(ThumbColor))
                 g.FillEllipse(br, tx - trad, ty - trad, trad * 2, trad * 2);
 
-            
             using var font = new Font("Segoe UI", 7.5f, FontStyle.Bold);
             using var tb   = new SolidBrush(Color.FromArgb(0, 229, 255));
             var sf = new StringFormat
@@ -117,8 +98,6 @@ namespace VisionEditCV
             g.DrawString(_value.ToString(), font, tb,
                 new RectangleF(0, 0, Width - 2, Height - 1), sf);
         }
-
-        
 
         protected override void OnMouseDown(MouseEventArgs e)
         {

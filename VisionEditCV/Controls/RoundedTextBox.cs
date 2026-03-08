@@ -3,18 +3,11 @@ using System.Drawing.Drawing2D;
 
 namespace VisionEditCV.Controls
 {
-    
-    
-    
-    
-    
     [System.ComponentModel.DesignerCategory("Component")]
     public class RoundedTextBox : Control
     {
-        
         private readonly TextBox _inner;
 
-        
         private Color _borderColor  = Color.FromArgb(0, 229, 255);
         private Color _borderFocus  = Color.FromArgb(0, 229, 255);
         private int   _cornerRadius = 10;
@@ -47,7 +40,6 @@ namespace VisionEditCV.Controls
             set { _borderColor = value; Invalidate(); }
         }
 
-        
         [System.ComponentModel.Browsable(true)]
         [System.ComponentModel.DefaultValue("")]
         [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Visible)]
@@ -57,7 +49,6 @@ namespace VisionEditCV.Controls
             set => _inner.PlaceholderText = value;
         }
 
-        
         [AllowNull]
         public override string Text
         {
@@ -129,14 +120,12 @@ namespace VisionEditCV.Controls
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            
             float half = _borderWidth / 2f;
             var bgRect = new RectangleF(half, half, Width - 1 - _borderWidth, Height - 1 - _borderWidth);
             using var bgPath = RoundedPath(bgRect, _cornerRadius);
             using var bgBrush = new SolidBrush(BackColor);
             g.FillPath(bgBrush, bgPath);
 
-            
             var borderColor = _focused ? _borderFocus : Color.FromArgb(60, 80, 100);
             using var borderPath = RoundedPath(bgRect, Math.Max(0, _cornerRadius - (int)Math.Ceiling(half)));
             using var pen = new Pen(borderColor, _borderWidth);

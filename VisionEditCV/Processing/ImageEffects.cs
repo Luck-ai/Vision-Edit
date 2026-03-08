@@ -8,18 +8,8 @@ using System.Runtime.InteropServices;
 
 namespace VisionEditCV.Processing
 {
-    
-    
-    
-    
-    
     public static class ImageEffects
     {
-        
-
-        
-        
-        
         public static Mat BitmapToMat(Bitmap bmp)
         {
             Bitmap src = bmp;
@@ -56,18 +46,12 @@ namespace VisionEditCV.Processing
 
             mat.SetTo(data);
 
-            
             if (channels == 4)
             {
-                
-                
             }
             return mat;
         }
 
-        
-        
-        
         public static Bitmap MatToBitmap(Mat mat)
         {
             int ch = mat.NumberOfChannels;
@@ -88,11 +72,6 @@ namespace VisionEditCV.Processing
             return bmp;
         }
 
-        
-        
-        
-        
-        
         public static byte[,] ResizeAndThresholdMask(float[,] mask, int targetW, int targetH,
             float threshold = 0.5f)
         {
@@ -100,7 +79,6 @@ namespace VisionEditCV.Processing
             int srcW = mask.GetLength(1);
             int srcBytes = srcH * srcW * sizeof(float);
 
-            
             var rawBytes = new byte[srcBytes];
             var gcHandle = GCHandle.Alloc(mask, GCHandleType.Pinned);
             try { Marshal.Copy(gcHandle.AddrOfPinnedObject(), rawBytes, 0, srcBytes); }
@@ -109,7 +87,6 @@ namespace VisionEditCV.Processing
             using Mat srcMat = new Mat(srcH, srcW, DepthType.Cv32F, 1);
             srcMat.SetTo(rawBytes);
 
-            
             using Mat dstMat = new Mat();
             CvInvoke.Resize(srcMat, dstMat, new Size(targetW, targetH),
                 interpolation: Inter.Linear);
@@ -117,7 +94,6 @@ namespace VisionEditCV.Processing
             using Mat dstU8 = new Mat();
             CvInvoke.Threshold(dstMat, dstU8, threshold, 255, ThresholdType.Binary);
 
-            
             using Mat dstByte = new Mat();
             dstU8.ConvertTo(dstByte, DepthType.Cv8U);
 
@@ -128,8 +104,6 @@ namespace VisionEditCV.Processing
             Buffer.BlockCopy(dstData, 0, binary, 0, dstData.Length);
             return binary;
         }
-
-        
 
         public static Bitmap ColorGrading(
             Bitmap image,
@@ -187,8 +161,6 @@ namespace VisionEditCV.Processing
 
             return MatToBitmap(result);
         }
-
-        
 
         private static Rectangle MaskBoundingRect(byte[,] binaryMask, int w, int h, int pad = 8)
         {
@@ -265,8 +237,6 @@ namespace VisionEditCV.Processing
             return MatToBitmap(result);
         }
 
-        
-
         public static Bitmap ExtractSticker(
             Bitmap image,
             float[,] mask,
@@ -288,9 +258,6 @@ namespace VisionEditCV.Processing
             byte[,] binaryMask = ResizeAndThresholdMask(mask, w, h, threshold);
             using Mat maskMono = BuildMaskMat(binaryMask, w, h);
 
-            
-            
-            
             Mat sticker = new Mat(h, w, DepthType.Cv8U, 4);
             sticker.SetTo(new MCvScalar(0, 0, 0, 0));
 
@@ -300,14 +267,12 @@ namespace VisionEditCV.Processing
                 using Mat shadowBlurred = new Mat();
                 CvInvoke.GaussianBlur(maskMono, shadowBlurred, new Size(blurKv, blurKv), 0);
 
-                
                 float[] mShadow = new float[] { 1, 0, 20, 0, 1, 20 };
                 using Mat mShadowMat = new Mat(2, 3, DepthType.Cv32F, 1);
                 mShadowMat.SetTo(mShadow.SelectMany(BitConverter.GetBytes).ToArray());
                 using Mat shadowShifted = new Mat();
                 CvInvoke.WarpAffine(shadowBlurred, shadowShifted, mShadowMat, new Size(w, h));
 
-                
                 using Mat shadowF = new Mat();
                 shadowShifted.ConvertTo(shadowF, DepthType.Cv32F, 1.0 / 255.0);
                 using Mat shadowAlpha = new Mat();
@@ -315,38 +280,31 @@ namespace VisionEditCV.Processing
                 using Mat shadowAlpha8 = new Mat();
                 shadowAlpha.ConvertTo(shadowAlpha8, DepthType.Cv8U, 255.0);
 
-                
                 using Mat zeros = new Mat(h, w, DepthType.Cv8U, 1);
                 zeros.SetTo(new MCvScalar(0));
                 using var channels = new Emgu.CV.Util.VectorOfMat(zeros, zeros, zeros, shadowAlpha8);
                 CvInvoke.Merge(channels, sticker);
             }
 
-            
-            
             using Mat srcBgra = new Mat();
             CvInvoke.CvtColor(img3, srcBgra, ColorConversion.Bgr2Bgra);
 
-            
             using Mat srcAlpha = new Mat();
             CvInvoke.ExtractChannel(srcBgra, srcAlpha, 3);
             CvInvoke.BitwiseOr(srcAlpha, maskMono, srcAlpha);  
 
             using var fgChannels = new Emgu.CV.Util.VectorOfMat();
             CvInvoke.Split(srcBgra, fgChannels);
-            
+
             using var fgWithAlpha = new Emgu.CV.Util.VectorOfMat(
                 fgChannels[0], fgChannels[1], fgChannels[2], maskMono);
             using Mat fgBgra = new Mat();
             CvInvoke.Merge(fgWithAlpha, fgBgra);
 
-            
             fgBgra.CopyTo(sticker, maskMono);
 
-            
             if (Math.Abs(scaleFactor - 1.0f) > 0.001f || Math.Abs(rotationAngle) > 0.001f)
             {
-                
                 using Mat maskF = new Mat();
                 maskMono.ConvertTo(maskF, DepthType.Cv32F);
                 var moments = CvInvoke.Moments(maskF, false);
@@ -365,7 +323,6 @@ namespace VisionEditCV.Processing
                 sticker = warped;
             }
 
-            
             if (contourThickness > 0)
             {
                 using Mat alphaCh = new Mat();
@@ -385,15 +342,10 @@ namespace VisionEditCV.Processing
             return result;
         }
 
-        
-        
-        
-        
         public static Bitmap CompositeSticker(Bitmap stickerBgra, Bitmap background)
         {
             int outW = background.Width, outH = background.Height;
 
-            
             using Mat bgMat = BitmapToMat(background);
             using Mat bgBgra = new Mat();
             if (bgMat.NumberOfChannels == 3)
@@ -404,11 +356,9 @@ namespace VisionEditCV.Processing
             using Mat stickerMat = BitmapToMat(stickerBgra);
             int sw = stickerMat.Width, sh = stickerMat.Height;
 
-            
             int offX = (outW - sw) / 2;
             int offY = (outH - sh) / 2;
 
-            
             var outImg  = bgBgra.ToImage<Bgra, byte>();
             var stickerI = stickerMat.ToImage<Bgra, byte>();
 
@@ -438,7 +388,6 @@ namespace VisionEditCV.Processing
             return MatToBitmap(result);
         }
 
-        
         public static Bitmap SolidColorBackground(Color color, int width, int height)
         {
             var bmp = new Bitmap(width, height, PixelFormat.Format24bppRgb);
@@ -447,16 +396,6 @@ namespace VisionEditCV.Processing
             return bmp;
         }
 
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
         public static Bitmap PortraitEffect(
             Bitmap image,
             float[,] mask,
@@ -472,7 +411,6 @@ namespace VisionEditCV.Processing
 
             int w = imgBgr.Width, h = imgBgr.Height;
 
-            
             int srcH = mask.GetLength(0), srcW = mask.GetLength(1);
             float[] flatMask = new float[srcH * srcW];
             for (int r = 0; r < srcH; r++)
@@ -493,7 +431,6 @@ namespace VisionEditCV.Processing
             CvInvoke.Resize(floatMaskMat, resizedMask, new Size(w, h), interpolation: Inter.Linear);
             floatMaskMat.Dispose();
 
-            
             Mat alphaMask = new Mat();
             if (featherAmount > 0)
             {
@@ -507,30 +444,22 @@ namespace VisionEditCV.Processing
             }
             resizedMask.Dispose();
 
-            
             int bk = blurStrength % 2 == 0 ? blurStrength + 1 : blurStrength;
             if (bk < 3) bk = 3;
             using Mat blurred = new Mat();
             CvInvoke.GaussianBlur(imgBgr, blurred, new Size(bk, bk), 0);
 
-            
-            
             using Mat imgF = new Mat();
             using Mat blurF = new Mat();
             imgBgr.ConvertTo(imgF, DepthType.Cv32F);
             blurred.ConvertTo(blurF, DepthType.Cv32F);
 
-            
             using Mat alpha3 = new Mat();
             CvInvoke.CvtColor(alphaMask, alpha3, ColorConversion.Gray2Bgr);
             alphaMask.Dispose();
 
             using Mat alpha3F = new Mat();
             alpha3.ConvertTo(alpha3F, DepthType.Cv32F);
-
-            
-            
-            
 
             using Mat oneMinusAlpha = new Mat();
             Mat ones = new Mat(alpha3F.Rows, alpha3F.Cols, DepthType.Cv32F, 3);
@@ -552,13 +481,6 @@ namespace VisionEditCV.Processing
             return MatToBitmap(finalU8);
         }
 
-        
-
-        
-
-        
-        
-        
         public static Bitmap PixelateMasked(Bitmap image, float[,] mask, int pixelSize)
         {
             if (pixelSize <= 1) return (Bitmap)image.Clone();
@@ -574,7 +496,6 @@ namespace VisionEditCV.Processing
             byte[,] binaryMask = ResizeAndThresholdMask(mask, w, h);
             using Mat maskMat = BuildMaskMat(binaryMask, w, h);
 
-            
             using Mat small = new Mat();
             using Mat pixelated = new Mat();
             CvInvoke.Resize(imgBgr, small,
@@ -588,11 +509,6 @@ namespace VisionEditCV.Processing
             return MatToBitmap(result);
         }
 
-        
-
-        
-        
-        
         public static Bitmap BlurMasked(Bitmap image, float[,] mask, int kernelSize)
         {
             int k = kernelSize % 2 == 0 ? kernelSize + 1 : kernelSize;
@@ -618,12 +534,6 @@ namespace VisionEditCV.Processing
             return MatToBitmap(result);
         }
 
-        
-
-        
-        
-        
-        
         public static Bitmap RenderMaskOverlays(
             Bitmap image,
             IList<float[,]> masks,
@@ -647,7 +557,6 @@ namespace VisionEditCV.Processing
 
             for (int i = 0; i < masks.Count; i++)
             {
-                
                 if (anySelected && !selected[i]) continue;
 
                 byte[,] binaryMask = ResizeAndThresholdMask(masks[i], imgBgr.Width, imgBgr.Height);
@@ -662,8 +571,6 @@ namespace VisionEditCV.Processing
 
                 CvInvoke.AddWeighted(overlay, 1.0, coloredMask, maskAlpha, 0, overlay);
 
-                
-                
                 using VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint();
                 using Mat hier = new Mat();
                 CvInvoke.FindContours(maskMat, contours, hier,
@@ -675,10 +582,8 @@ namespace VisionEditCV.Processing
                         new MCvScalar(c.B, c.G, c.R), 3);
                 }
 
-                
                 if (contours.Size > 0)
                 {
-                    
                     Rectangle topRect = default;
                     for (int ci = 0; ci < contours.Size; ci++)
                     {
@@ -699,7 +604,6 @@ namespace VisionEditCV.Processing
                         double fontScale = Math.Max(0.5, Math.Min(imgBgr.Width, imgBgr.Height) / 900.0);
                         int thick = fontScale >= 0.7 ? 2 : 1;
 
-                        
                         int bl1 = 0, bl2 = 0;
                         var numSize = CvInvoke.GetTextSize(numStr, FontFace.HersheySimplex,
                             fontScale * 0.8, thick, ref bl1);
@@ -713,26 +617,23 @@ namespace VisionEditCV.Processing
                         int tagW = circleD + pad + scoreSize.Width + pad * 2;
                         int tagH = circleD + pad;
 
-                        
                         int tagX = topRect.X + topRect.Width / 2 - tagW / 2;
                         int tagY = topRect.Y - tagH - (int)(4 * fontScale);
                         tagX = Math.Clamp(tagX, 2, imgBgr.Width - tagW - 2);
                         tagY = Math.Max(2, tagY);
 
-                        
                         var tagRect = new Rectangle(tagX, tagY, tagW, tagH);
                         CvInvoke.Rectangle(overlay, tagRect,
                             new MCvScalar(20, 20, 20), -1);
                         CvInvoke.Rectangle(overlay, tagRect,
                             new MCvScalar(c.B, c.G, c.R), (int)Math.Max(1, fontScale));
 
-                        
                         int circleX = tagX + pad;
                         int circleY = tagY + (tagH - circleD) / 2;
                         var circleCenter = new Point(circleX + circleD / 2, circleY + circleD / 2);
                         CvInvoke.Circle(overlay, circleCenter, circleD / 2,
                             new MCvScalar(c.B, c.G, c.R), -1);
-                        
+
                         int numX = circleX + (circleD - numSize.Width) / 2;
                         int numY = circleY + (circleD + numSize.Height) / 2;
                         CvInvoke.PutText(overlay, numStr,
@@ -740,7 +641,6 @@ namespace VisionEditCV.Processing
                             FontFace.HersheySimplex, fontScale * 0.8,
                             new MCvScalar(255, 255, 255), thick);
 
-                        
                         if (scoreStr.Length > 0)
                         {
                             int scoreX = circleX + circleD + pad;
@@ -757,19 +657,6 @@ namespace VisionEditCV.Processing
             return MatToBitmap(overlay);
         }
 
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         public static float[,] TransformMaskForDisplay(
             float[,] mask,
             int imageW, int imageH,
@@ -778,7 +665,6 @@ namespace VisionEditCV.Processing
             float threshold = 0.5f,
             int previewMaxDim = 0)
         {
-            
             if (Math.Abs(scaleFactor - 1.0f) <= 0.001f && Math.Abs(rotationAngle) <= 0.001f)
             {
                 var copy = new float[mask.GetLength(0), mask.GetLength(1)];
@@ -786,7 +672,6 @@ namespace VisionEditCV.Processing
                 return copy;
             }
 
-            
             int workW = imageW, workH = imageH;
             if (previewMaxDim > 0 && Math.Max(imageW, imageH) > previewMaxDim)
             {
@@ -798,7 +683,6 @@ namespace VisionEditCV.Processing
             byte[,] binary = ResizeAndThresholdMask(mask, workW, workH, threshold);
             using Mat maskMono = BuildMaskMat(binary, workW, workH);
 
-            
             using Mat maskF = new Mat();
             maskMono.ConvertTo(maskF, DepthType.Cv32F);
             var moments = CvInvoke.Moments(maskF, false);
@@ -814,7 +698,6 @@ namespace VisionEditCV.Processing
             CvInvoke.WarpAffine(maskMono, warped, transform, new Size(workW, workH),
                 Inter.Linear, Warp.Default, BorderType.Constant, new MCvScalar(0));
 
-            
             Mat finalMono = warped;
             Mat? upscaled = null;
             if (workW != imageW || workH != imageH)
@@ -824,7 +707,6 @@ namespace VisionEditCV.Processing
                 finalMono = upscaled;
             }
 
-            
             byte[] data = new byte[imageH * imageW];
             finalMono.CopyTo(data);
             upscaled?.Dispose();

@@ -1,11 +1,7 @@
 namespace VisionEditCV
 {
-    
-    
-    
     internal static class GraphicsExtensions
     {
-        
         public static void FillRoundedRect(
             this Graphics g, Brush brush, RectangleF rect, float radius)
         {
@@ -19,7 +15,6 @@ namespace VisionEditCV
             g.FillPath(brush, path);
         }
 
-        
         public static void DrawRoundedRect(
             this Graphics g, Pen pen, RectangleF rect, float radius)
         {

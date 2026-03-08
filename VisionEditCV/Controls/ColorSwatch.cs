@@ -1,15 +1,10 @@
 namespace VisionEditCV
 {
-    
-    
-    
-    
     [System.ComponentModel.DesignerCategory("Component")]
     public class ColorSwatch : Control
     {
         private Color _color = Color.White;
 
-        
         [System.ComponentModel.Browsable(true)]
         [System.ComponentModel.DefaultValue(typeof(Color), "White")]
         [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Visible)]
@@ -19,7 +14,6 @@ namespace VisionEditCV
             set { _color = value; Invalidate(); }
         }
 
-        
         public event EventHandler? ColorChanged;
 
         public ColorSwatch()

@@ -12,11 +12,10 @@ namespace VisionEditCV.Controls
         public MaskSelectedEventArgs(int idx, bool sel) { MaskIndex = idx; Selected = sel; }
     }
 
-    
     public class BBoxEntry
     {
         public RectangleF Rect  { get; set; }
-        
+
         public bool       Label { get; set; } = true;
 
         public BBoxEntry(RectangleF rect, bool label = true)
@@ -26,65 +25,42 @@ namespace VisionEditCV.Controls
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     [System.ComponentModel.DesignerCategory("Component")]
     public class ImageCanvas : Control
     {
-        
         private static readonly Color CyanAccent = Color.FromArgb(0, 229, 255);
         private static readonly Color RedAccent  = Color.FromArgb(255, 80,  60);
         private static readonly Color PanelBg    = Color.FromArgb(13, 13, 13);
 
-        
         private Bitmap? _originalBitmap;
         private Bitmap? _fileOriginalBitmap; 
         private Bitmap? _processedBitmap;
         private Bitmap? _displayBitmap;
         private bool    _showingOriginal = false;
 
-        
         private List<float[,]> _masks        = new();
         private List<float[,]> _originalMasks = new(); 
         private List<Color>    _maskColors   = new();
         private List<bool>     _maskSelected  = new();
         private List<float>    _maskScores   = new();
 
-        
-        
         private List<float[,]>? _displayMasksOverride = null;
 
-        
         private float  _zoom = 1.0f;
         private PointF _panOffset = PointF.Empty;
         private bool   _panning = false;
         private PointF _panStart;
         private PointF _panOffsetStart;
 
-        
         private readonly List<BBoxEntry> _boxes = new();
 
-        
         private int _selectedBox = -1;
 
-        
         private bool   _drawingNew = false;
         private PointF _drawStart;
 
-        
         private int _dragHandle = -1;   
 
-        
         private bool      _movingBox = false;
         private PointF    _moveStart;
         private RectangleF _boxAtMoveStart;
@@ -94,16 +70,14 @@ namespace VisionEditCV.Controls
         [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Visible)]
         public CanvasMode Mode { get; set; } = CanvasMode.None;
 
-        
         public event EventHandler<MaskSelectedEventArgs>? MaskSelectionChanged;
         public event EventHandler<RectangleF>?            BBoxChanged;
         public event EventHandler?                        ImageDropped;
 
-        
         public Bitmap?             OriginalBitmap    => _originalBitmap;
-        
+
         public IReadOnlyList<BBoxEntry> BBoxEntries  => _boxes;
-        
+
         public RectangleF BBoxInImageSpace            => _boxes.Count > 0 ? _boxes[0].Rect : RectangleF.Empty;
         public IReadOnlyList<bool>  MaskSelected     => _maskSelected;
         public List<Color>          MaskColors       => _maskColors;
@@ -117,8 +91,6 @@ namespace VisionEditCV.Controls
             RefreshDisplay();
         }
 
-        
-
         public ImageCanvas()
         {
             SetStyle(ControlStyles.OptimizedDoubleBuffer |
@@ -130,8 +102,6 @@ namespace VisionEditCV.Controls
             DragEnter += OnDragEnter;
             DragDrop  += OnDragDrop;
         }
-
-        
 
         public void LoadImage(string path)
         {
@@ -151,11 +121,6 @@ namespace VisionEditCV.Controls
             Invalidate();
         }
 
-        
-        
-        
-        
-        
         public void RestoreOriginalFromFile(string path)
         {
             _originalBitmap?.Dispose();
@@ -177,10 +142,6 @@ namespace VisionEditCV.Controls
             RefreshDisplay();
         }
 
-        
-        
-        
-        
         public void CommitProcessedAsOriginal(Bitmap committed)
         {
             _originalBitmap?.Dispose();
@@ -204,7 +165,7 @@ namespace VisionEditCV.Controls
             for (int i = 0; i < result.Masks.Count; i++)
             {
                 _masks.Add(result.Masks[i]);
-                
+
                 var orig = new float[result.Masks[i].GetLength(0), result.Masks[i].GetLength(1)];
                 Array.Copy(result.Masks[i], orig, result.Masks[i].Length);
                 _originalMasks.Add(orig);
@@ -216,12 +177,6 @@ namespace VisionEditCV.Controls
             RefreshDisplay();
         }
 
-        
-        
-        
-        
-        
-        
         public void ReplaceMasks(List<float[,]> newMasks)
         {
             if (newMasks.Count != _masks.Count) return;
@@ -238,11 +193,6 @@ namespace VisionEditCV.Controls
             RefreshDisplay();
         }
 
-        
-        
-        
-        
-        
         public void SetDisplayMaskOverride(List<float[,]>? overrideMasks)
         {
             _displayMasksOverride = overrideMasks;
@@ -263,10 +213,6 @@ namespace VisionEditCV.Controls
             _displayBitmap   = null;
         }
 
-        
-        
-        
-        
         public void RestoreOriginalMasks()
         {
             if (_originalMasks.Count != _masks.Count) return;
@@ -294,8 +240,6 @@ namespace VisionEditCV.Controls
             Invalidate();
         }
 
-        
-
         private void RefreshDisplay()
         {
             _displayBitmap?.Dispose();
@@ -321,8 +265,6 @@ namespace VisionEditCV.Controls
             Invalidate();
         }
 
-        
-
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -342,7 +284,6 @@ namespace VisionEditCV.Controls
             g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
             g.DrawImage(src, dest);
 
-            
             if (Mode == CanvasMode.BoundingBox)
             {
                 for (int i = 0; i < _boxes.Count; i++)
@@ -363,12 +304,6 @@ namespace VisionEditCV.Controls
             g.DrawString(msg, font, brush, (Width - sz.Width) / 2, (Height - sz.Height) / 2);
         }
 
-        
-        
-        
-        
-        
-        
         private void DrawBox(Graphics g, Rectangle imgRect, BBoxEntry entry, bool selected)
         {
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -382,7 +317,6 @@ namespace VisionEditCV.Controls
             if (!selected) pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
             g.DrawRectangle(pen, sr.X, sr.Y, sr.Width, sr.Height);
 
-            
             if (selected)
             {
                 var handles = GetHandlePoints(sr);
@@ -396,7 +330,6 @@ namespace VisionEditCV.Controls
                 }
             }
 
-            
             string badge     = entry.Label ? "FG" : "BG";
             using var badgeFont  = new Font("Segoe UI", 7.5f, FontStyle.Bold);
             SizeF     badgeSz    = g.MeasureString(badge, badgeFont);
@@ -409,8 +342,6 @@ namespace VisionEditCV.Controls
             using var badgeText  = new SolidBrush(boxColor);
             g.DrawString(badge, badgeFont, badgeText, bx, by);
         }
-
-        
 
         private Rectangle GetLetterboxRect(int imgW, int imgH)
         {
@@ -475,7 +406,6 @@ namespace VisionEditCV.Controls
             return -1;
         }
 
-        
         private int HitTestBox(PointF screen, Rectangle imgRect)
         {
             for (int i = _boxes.Count - 1; i >= 0; i--)
@@ -486,8 +416,6 @@ namespace VisionEditCV.Controls
             return -1;
         }
 
-        
-
         protected override void OnMouseWheel(MouseEventArgs e)
         {
             base.OnMouseWheel(e);
@@ -497,7 +425,6 @@ namespace VisionEditCV.Controls
             float factor  = e.Delta > 0 ? 1.15f : 1f / 1.15f;
             _zoom = Math.Clamp(_zoom * factor, 0.5f, 10f);
 
-            
             float ratio = _zoom / oldZoom;
             _panOffset = new PointF(
                 e.X - ratio * (e.X - _panOffset.X - Width  / 2f) - Width  / 2f,
@@ -506,14 +433,11 @@ namespace VisionEditCV.Controls
             Invalidate();
         }
 
-        
-
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
             if (_originalBitmap == null) return;
 
-            
             if (e.Button == MouseButtons.Middle)
             {
                 _panning = true;
@@ -526,7 +450,6 @@ namespace VisionEditCV.Controls
 
             Rectangle imgRect = GetLetterboxRect(_originalBitmap.Width, _originalBitmap.Height);
 
-            
             if (e.Button == MouseButtons.Left && _masks.Count > 0)
             {
                 PointF imgPt       = ScreenToImage(e.Location, imgRect);
@@ -546,7 +469,6 @@ namespace VisionEditCV.Controls
             {
                 if (e.Button == MouseButtons.Right)
                 {
-                    
                     int hit = HitTestBox(e.Location, imgRect);
                     if (hit >= 0)
                     {
@@ -560,7 +482,6 @@ namespace VisionEditCV.Controls
 
                 if (e.Button == MouseButtons.Left)
                 {
-                    
                     int handle = HitTestHandle(e.Location, imgRect);
                     if (handle >= 0)
                     {
@@ -569,7 +490,6 @@ namespace VisionEditCV.Controls
                         return;
                     }
 
-                    
                     int hit = HitTestBox(e.Location, imgRect);
                     if (hit >= 0)
                     {
@@ -582,7 +502,6 @@ namespace VisionEditCV.Controls
                         return;
                     }
 
-                    
                     _drawingNew  = true;
                     _drawStart   = ScreenToImage(e.Location, imgRect);
                     _selectedBox = -1;
@@ -596,7 +515,6 @@ namespace VisionEditCV.Controls
             base.OnMouseMove(e);
             if (_originalBitmap == null) return;
 
-            
             if (_panning && (e.Button & MouseButtons.Middle) != 0)
             {
                 _panOffset = new PointF(
@@ -608,7 +526,6 @@ namespace VisionEditCV.Controls
 
             Rectangle imgRect = GetLetterboxRect(_originalBitmap.Width, _originalBitmap.Height);
 
-            
             if (_drawingNew && (e.Button & MouseButtons.Left) != 0)
             {
                 PointF cur = ScreenToImage(e.Location, imgRect);
@@ -617,7 +534,6 @@ namespace VisionEditCV.Controls
                 float  w   = Math.Abs(cur.X - _drawStart.X);
                 float  h   = Math.Abs(cur.Y - _drawStart.Y);
 
-                
                 if (_selectedBox >= 0 && _selectedBox < _boxes.Count)
                     _boxes[_selectedBox] = new BBoxEntry(new RectangleF(x, y, w, h), true);
                 else
@@ -629,7 +545,6 @@ namespace VisionEditCV.Controls
                 return;
             }
 
-            
             if (_dragHandle >= 0 && _selectedBox >= 0 && (e.Button & MouseButtons.Left) != 0)
             {
                 PointF  imgPt  = ScreenToImage(e.Location, imgRect);
@@ -639,7 +554,6 @@ namespace VisionEditCV.Controls
                 return;
             }
 
-            
             if (_movingBox && _selectedBox >= 0 && (e.Button & MouseButtons.Left) != 0)
             {
                 float iw = _originalBitmap.Width;
@@ -653,7 +567,6 @@ namespace VisionEditCV.Controls
                 return;
             }
 
-            
             if (Mode == CanvasMode.BoundingBox)
             {
                 int handle = HitTestHandle(e.Location, imgRect);
@@ -687,7 +600,6 @@ namespace VisionEditCV.Controls
                     var clamped = ClampToImage(_boxes[_selectedBox].Rect);
                     if (clamped.Width < 2 || clamped.Height < 2)
                     {
-                        
                         _boxes.RemoveAt(_selectedBox);
                         _selectedBox = _boxes.Count - 1;
                     }
@@ -729,7 +641,6 @@ namespace VisionEditCV.Controls
         {
             base.OnKeyDown(e);
 
-            
             if (e.Control && e.KeyCode == Keys.D0)
             {
                 ResetZoom();
@@ -761,8 +672,6 @@ namespace VisionEditCV.Controls
             if (_originalBitmap == null)
                 ImageDropped?.Invoke(this, EventArgs.Empty);
         }
-
-        
 
         private static RectangleF UpdateRectForHandle(RectangleF r, int handle, PointF imgPt)
         {
@@ -802,8 +711,6 @@ namespace VisionEditCV.Controls
             _      => Cursors.Default
         };
 
-        
-
         private int HitTestMask(PointF imgPt)
         {
             if (_originalBitmap == null) return -1;
@@ -821,8 +728,6 @@ namespace VisionEditCV.Controls
             }
             return -1;
         }
-
-        
 
         private void OnDragEnter(object? sender, DragEventArgs e)
         {

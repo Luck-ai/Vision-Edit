@@ -1,9 +1,5 @@
 namespace VisionEditCV.Controls
 {
-    
-    
-    
-    
     [System.ComponentModel.DesignerCategory("Component")]
     public class ChipLabel : Control
     {
@@ -11,7 +7,6 @@ namespace VisionEditCV.Controls
         private static readonly Color DefaultPillBorder = Color.FromArgb(0, 140, 160);
         private static readonly Color DefaultText       = Color.FromArgb(0, 229, 255);
 
-        
         public int CornerRadius { get; set; } = 10;
 
         public ChipLabel()
@@ -37,16 +32,13 @@ namespace VisionEditCV.Controls
             var rect = new RectangleF(0.5f, 0.5f, Width - 1f, Height - 1f);
             int r    = Math.Min(CornerRadius, (int)(Math.Min(rect.Width, rect.Height) / 2f));
 
-            
             using var path = RoundedRect(rect, r);
             using (var fillBrush = new SolidBrush(BackColor))
                 g.FillPath(fillBrush, path);
 
-            
             using (var borderPen = new Pen(DefaultPillBorder, 1f))
                 g.DrawPath(borderPen, path);
 
-            
             var sf = new StringFormat
             {
                 Alignment     = StringAlignment.Center,

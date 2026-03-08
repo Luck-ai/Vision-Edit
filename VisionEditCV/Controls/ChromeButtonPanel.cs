@@ -1,20 +1,8 @@
 namespace VisionEditCV.Controls
 {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     [System.ComponentModel.DesignerCategory("Component")]
     public class ChromeButtonPanel : Control
     {
-        
         private static readonly Color TitleBarBg   = Color.FromArgb(18,  18,  24);
         private static readonly Color PillBg        = Color.FromArgb(38,  40,  52);
         private static readonly Color HoverMin      = Color.FromArgb(55,  57,  75);
@@ -23,16 +11,13 @@ namespace VisionEditCV.Controls
         private static readonly Color AccentLine    = Color.FromArgb(0,  160, 180);
         private static readonly Color IconColor     = Color.FromArgb(200, 200, 210);
 
-        
         private const int PillRadius = 7;
         private const int PillVInset = 7;   
 
-        
         private enum Zone { None, Min, Max, Close }
         private Zone _hovered = Zone.None;
         private Zone _pressed = Zone.None;
 
-        
         public event EventHandler? MinimizeClicked;
         public event EventHandler? MaximizeClicked;
         public event EventHandler? CloseClicked;
@@ -49,7 +34,6 @@ namespace VisionEditCV.Controls
             BackColor = TitleBarBg;   
         }
 
-        
         private int SlotW => Width / 3;
 
         private Zone HitZone(Point p)
@@ -59,7 +43,6 @@ namespace VisionEditCV.Controls
             return slot switch { 0 => Zone.Min, 1 => Zone.Max, _ => Zone.Close };
         }
 
-        
         protected override void OnMouseMove(MouseEventArgs e)
         {
             var z = HitZone(e.Location);
@@ -92,7 +75,6 @@ namespace VisionEditCV.Controls
             base.OnMouseUp(e);
         }
 
-        
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
@@ -102,31 +84,22 @@ namespace VisionEditCV.Controls
             int w = Width, h = Height;
             int sw = SlotW;
 
-            
             g.Clear(TitleBarBg);
 
-            
             float py = PillVInset;
             float ph = h - PillVInset * 2;
             float pr = PillRadius;
             var pill = new RectangleF(0, py, w - 1, ph);
 
-            
-            
-            
-
-            
             using var pillPath = RoundedPath(pill, pr);
             g.SetClip(pillPath);
 
-            
             PaintSlot(g, new RectangleF(0,       py, sw,     ph), Zone.Min);
             PaintSlot(g, new RectangleF(sw,      py, sw,     ph), Zone.Max);
             PaintSlot(g, new RectangleF(sw * 2,  py, w - sw * 2, ph), Zone.Close);
 
             g.ResetClip();
 
-            
             using var iconFont = new Font("Segoe UI Symbol", 10f, FontStyle.Regular);
             using var iconBrush = new SolidBrush(IconColor);
             var sf = new StringFormat
@@ -136,13 +109,10 @@ namespace VisionEditCV.Controls
                 FormatFlags   = StringFormatFlags.NoWrap
             };
 
-            
             g.DrawString("─", iconFont, iconBrush, new RectangleF(0,      py, sw,          ph), sf);
             g.DrawString("🗖", iconFont, iconBrush, new RectangleF(sw,     py, sw,          ph), sf);
             g.DrawString("✕", iconFont, iconBrush, new RectangleF(sw * 2, py, w - sw * 2,  ph), sf);
 
-            
-            
             using var accentPen = new Pen(AccentLine, 1);
             g.DrawLine(accentPen, 0, h - 1, w, h - 1);
         }

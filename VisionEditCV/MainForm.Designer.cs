@@ -13,24 +13,20 @@ namespace VisionEditCV
             base.Dispose(disposing);
         }
 
-        
         private System.Windows.Forms.Panel _windowTitleBar;
         private VisionEditCV.Controls.ChromeButtonPanel _chromeButtons;
         private System.Windows.Forms.Label _lblWindowTitle;
 
-        
         private System.Windows.Forms.Panel _leftPanel;
         private System.Windows.Forms.Panel _centerPanel;
         private System.Windows.Forms.Panel _rightPanel;
         private System.Windows.Forms.Panel _effectSubPanel;
         private System.Windows.Forms.Panel _bottomContainer;
 
-        
         private DarkButton _btnClearMasks;
         private DarkButton _btnHideMasks;
         private DarkButton _btnToggleRight;
 
-        
         private System.Windows.Forms.Label           _titleLabel;
         private System.Windows.Forms.Label           _effectsLabel;
         private System.Windows.Forms.FlowLayoutPanel _leftFlow;
@@ -46,44 +42,35 @@ namespace VisionEditCV
         private System.Windows.Forms.Panel _leftBtnSpacer;
         private System.Windows.Forms.Panel _leftBtnSpacer2;
 
-        
         private VisionEditCV.Controls.ImageCanvas _canvas;
         private DarkButton _btnChangeImage;
         private System.Windows.Forms.Panel _loadingOverlay;
         private System.Windows.Forms.Label _loadingLabel;
 
-        
         private System.Windows.Forms.Label           _maskListTitle;
         private VisionEditCV.Controls.MaskListPanel  _maskList;
 
-        
         private System.Windows.Forms.Panel   _topBar;
 
-        
         private System.Windows.Forms.Panel   _bottomBar;
 
-        
         private System.Windows.Forms.Label   _lblSelMode;
         private DarkButton                   _btnBBox;
         private DarkButton                   _btnPrompt;
         private VisionEditCV.Controls.RoundedTextBox _promptBox;
         private DarkButton                   _btnSegment;
 
-        
         private System.Windows.Forms.Panel   _serverPanel;
         private System.Windows.Forms.Label   _lblServer;
         private System.Windows.Forms.TextBox _txtServerUrl;
         private System.Windows.Forms.Label   _lblServerStatus;
 
-        
         private System.Windows.Forms.Label _lblNoEffect;
         private System.Windows.Forms.Label _controlsLabel;
 
-        
         private System.Windows.Forms.FlowLayoutPanel _appliedEffectsPanel;
         private DarkButton _btnResetAll;
 
-        
         private System.Windows.Forms.Panel _panelColorGrading;
         private System.Windows.Forms.Panel _panelArtistic;
         private System.Windows.Forms.Panel _panelSticker;
@@ -93,7 +80,6 @@ namespace VisionEditCV
         private DarkButton                 _btnApplyEffect;
         private DarkButton                 _btnResetEffect;
 
-        
         private System.Windows.Forms.FlowLayoutPanel _cgFlow;
         private System.Windows.Forms.Panel  _grpCgTint;
         private System.Windows.Forms.Label  _lblCgTint;
@@ -112,14 +98,12 @@ namespace VisionEditCV
         private DarkButton _btnCgFg;
         private DarkButton _btnCgBg;
 
-        
         private System.Windows.Forms.FlowLayoutPanel _gsFlow;
         private System.Windows.Forms.Panel  _grpGsTb;
         private System.Windows.Forms.Label  _lblGsTb;
         private DarkButton _btnGsFg;
         private DarkButton _btnGsBg;
 
-        
         private System.Windows.Forms.FlowLayoutPanel _artFlow;
         private System.Windows.Forms.Panel        _grpArtMode;
         private DarkButton                        _btnArtStylize;
@@ -134,7 +118,6 @@ namespace VisionEditCV
         private System.Windows.Forms.Label        _lblArtShade;
         private SliderControl                     _artShade;
 
-        
         private System.Windows.Forms.FlowLayoutPanel _stFlow;
         private System.Windows.Forms.Panel  _grpStSc;
         private System.Windows.Forms.Label  _lblStSc;
@@ -157,7 +140,6 @@ namespace VisionEditCV
         private ColorSwatch                   _stBgColorSwatch;
         private DarkButton                    _btnStickerUploadBg;
 
-        
         private System.Windows.Forms.FlowLayoutPanel _pbFlow;
         private System.Windows.Forms.Panel  _grpPbMode;
         private System.Windows.Forms.Label  _lblPbMode;
@@ -171,7 +153,6 @@ namespace VisionEditCV
         private DarkButton                  _btnPbForeground;
         private DarkButton                  _btnPbBackground;
 
-        
         private System.Windows.Forms.FlowLayoutPanel _ptFlow;
         private System.Windows.Forms.Panel  _grpPtBlur;
         private System.Windows.Forms.Label  _lblPtBlur;
@@ -743,9 +724,7 @@ namespace VisionEditCV
             _btnClearMasks.TabIndex = 2;
             _btnClearMasks.Text = "Clear All Masks";
             _btnClearMasks.UseVisualStyleBackColor = false;
-            
-            
-            
+
             _btnHideMasks.BackColor = Color.FromArgb(32, 34, 38);
             _btnHideMasks.Dock = DockStyle.Bottom;
             _btnHideMasks.FlatAppearance.BorderColor = Color.FromArgb(45, 45, 55);
