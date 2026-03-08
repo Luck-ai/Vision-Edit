@@ -70,7 +70,7 @@ Notes:
 - Windows may show a security prompt for downloaded files; choose to trust/publish only if the source is trusted.
 - If required by your machine, install the .NET Desktop Runtime 8 first.
 
-### Run with Visual Studio
+## Run with Visual Studio
 
 1. Open `VisionEditCV.slnx`.
 2. Set `VisionEditCV` as startup project (if needed).
