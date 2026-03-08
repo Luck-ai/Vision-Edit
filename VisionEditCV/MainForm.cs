@@ -8,7 +8,7 @@ namespace VisionEditCV
 {
     public partial class MainForm : Form
     {
-        // ── Theme constants (shared with Designer) ───────────────────────────
+        
         internal static readonly Color _BgMain = Color.FromArgb(18, 18, 18);
         internal static readonly Color _BgPanel = Color.FromArgb(24, 24, 24);
         internal static readonly Color _BgButton = Color.FromArgb(32, 34, 38);
@@ -17,17 +17,17 @@ namespace VisionEditCV
         internal static readonly Color _TextDim = Color.FromArgb(140, 140, 160);
         internal static readonly Color _BorderColor = Color.FromArgb(45, 45, 55);
 
-        // ── API ───────────────────────────────────────────────────────────────
+        
         private readonly Sam3Client _client = new Sam3Client();
         private SegmentationResult? _lastResult;
         private string? _currentImagePath;
         private CancellationTokenSource? _healthCts;
 
-        // ── Async preview debounce ────────────────────────────────────────────
+        
         private CancellationTokenSource? _previewCts;
         private readonly SemaphoreSlim _previewSem = new SemaphoreSlim(1, 1);
 
-        // ── Runtime state ─────────────────────────────────────────────────────
+        
         private string _activeEffect = "";
         private bool _comparingOriginal = false;
         private bool _pixelateMode = true;
@@ -35,19 +35,19 @@ namespace VisionEditCV
         private bool _pbTargetBg = false;
         private bool _gsTargetBgMode = false;
         private bool _cgTargetBgMode = false;
-        private string _stickerBgMode = "Original"; // "Original" | "Solid" | "Image" | "Transparent"
+        private string _stickerBgMode = "Original"; 
         private Bitmap? _stickerCustomBg = null;
-        private Bitmap? _preEffectSnapshot = null; // clean bitmap before last sticker apply
+        private Bitmap? _preEffectSnapshot = null; 
 
-        // ── Applied effects tracking ─────────────────────────────────────────
+        
         private readonly List<string> _appliedEffects = new();
 
-        // ── Right panel collapse state ───────────────────────────────────────
+        
         private bool _rightPanelExpanded = true;
         private const int RightPanelFullWidth = 360;
         private const int RightPanelCollapsedWidth = 26;
 
-        // ── Window Control logic ──────────────────────────────────────────
+        
         private const int WM_NCHITTEST = 0x84;
         private const int HTCLIENT = 0x1;
         private const int HTCAPTION = 0x2;
@@ -64,11 +64,11 @@ namespace VisionEditCV
         {
             if (m.Msg == WM_NCHITTEST)
             {
-                base.WndProc(ref m); // get default result first
+                base.WndProc(ref m); 
                 if ((int)m.Result == HTCLIENT)
                 {
                     Point pos = PointToClient(Cursor.Position);
-                    const int r = 8; // resize grip width
+                    const int r = 8; 
 
                     bool left = pos.X <= r;
                     bool right = pos.X >= ClientSize.Width - r;
@@ -89,9 +89,9 @@ namespace VisionEditCV
             base.WndProc(ref m);
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Constructor
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         public MainForm()
         {
@@ -99,18 +99,18 @@ namespace VisionEditCV
             PostInit();
         }
 
-        /// <summary>
-        /// Runs after InitializeComponent() to wire events and finish setup
-        /// that cannot be expressed in the designer (dynamic positioning, etc.).
-        /// </summary>
+        
+        
+        
+        
         private void PostInit()
         {
-            // Set Form Border Style to None for custom Title Bar
+            
             this.FormBorderStyle = FormBorderStyle.None;
             this.DoubleBuffered = true;
             this.SetStyle(ControlStyles.ResizeRedraw, true);
 
-            // Server URL comes from the API client
+            
             _txtServerUrl.Text = _client.BaseUrl;
 
             WireEvents();
@@ -126,13 +126,13 @@ namespace VisionEditCV
                 }
             };
 
-            // Run initial layout passes
+            
             TopBarResize(_topBar, EventArgs.Empty);
             EffectSubPanelResize(_effectSubPanel, EventArgs.Empty);
-            // Establish initial bottom-bar state: BBox active, prompt hidden
+            
             SetCanvasMode(CanvasMode.BoundingBox);
 
-            // Auto-connect to server on startup
+            
             _ = StartServerAsync();
         }
 
@@ -169,13 +169,13 @@ namespace VisionEditCV
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Event Wiring
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private void WireEvents()
         {
-            // Image loading / mask management
+            
             _btnChangeImage.Click += (s, e) => OpenImageFile();
             _btnClearMasks.Click += (s, e) => ClearAllMasks();
             _btnHideMasks.Click += (s, e) =>
@@ -193,7 +193,7 @@ namespace VisionEditCV
                 if (_canvas.OriginalBitmap == null) OpenImageFile();
             };
 
-            // Effect buttons
+            
             _btnColorGrading.Click += (s, e) => ActivateEffect("ColorGrading");
             _btnArtisticStyle.Click += (s, e) => ActivateEffect("Artistic");
             _btnStickerGen.Click += (s, e) => ActivateEffect("Sticker");
@@ -201,21 +201,21 @@ namespace VisionEditCV
             _btnPortrait.Click += (s, e) => ActivateEffect("Portrait");
             _btnGrayscale.Click += (s, e) => ActivateEffect("Grayscale");
 
-            // Apply / Reset effect
+            
             _btnApplyEffect.Click += (s, e) => ApplyCurrentEffect();
             _btnResetEffect.Click += (s, e) => ResetCurrentEffect();
 
-            // Reset all applied effects
+            
             _btnResetAll.Click += (s, e) => ResetAllEffects();
 
-            // Selection mode toggle
+            
             _btnBBox.Click += (s, e) => SetCanvasMode(CanvasMode.BoundingBox);
             _btnPrompt.Click += (s, e) => SetCanvasMode(CanvasMode.Prompt);
 
-            // Segment
+            
             _btnSegment.Click += async (s, e) => await RunSegmentation();
 
-            // Compare
+            
             _btnCompare.Click += (s, e) =>
             {
                 _comparingOriginal = !_comparingOriginal;
@@ -224,10 +224,10 @@ namespace VisionEditCV
                 _btnCompare.ForeColor = _comparingOriginal ? _BgMain : _TextMain;
             };
 
-            // Save
+            
             _btnSave.Click += (s, e) => SaveImage();
 
-            // Mask selection
+            
             _canvas.MaskSelectionChanged += (s, e) =>
             {
                 _maskList.SetRowSelected(e.MaskIndex, e.Selected);
@@ -242,7 +242,7 @@ namespace VisionEditCV
             _canvas.BBoxChanged += (s, e) => { };
             _canvas.MouseDown += (s, e) => _canvas.Focus();
 
-            // ── Color grading ─────────────────────────────────────────────────
+            
             WireSlider(_cgTintStrength);
             WireSlider(_cgBrightness);
             WireSlider(_cgContrast);
@@ -250,14 +250,14 @@ namespace VisionEditCV
             _btnCgBg.Click += (s, e) => SetCgMode(targetBg: true);
             _cgTintSwatch.ColorChanged += (s, e) => TriggerLivePreview();
 
-            // ── Artistic ──────────────────────────────────────────────────────
+            
             WireSlider(_artSigmaS);
             WireSlider(_artSigmaR);
             WireSlider(_artShade);
             _btnArtStylize.Click += (s, e) => SetArtMode(stylize: true);
             _btnArtPencil.Click += (s, e) => SetArtMode(stylize: false);
 
-            // ── Sticker ───────────────────────────────────────────────────────
+            
             WireSlider(_stScale);
             WireSlider(_stRotation);
             WireSlider(_stThickness);
@@ -278,15 +278,15 @@ namespace VisionEditCV
             _stBgColorSwatch.ColorChanged += (s, e) => TriggerLivePreview();
             _btnStickerUploadBg.Click += (s, e) => PickStickerBackground();
 
-            // ── Portrait ─────────────────────────────────────────────────────
+            
             WireSlider(_ptBlurStrength);
             WireSlider(_ptFeatherAmount);
 
-            // ── Grayscale ─────────────────────────────────────────────────────
+            
             _btnGsFg.Click += (s, e) => SetGsMode(targetBg: false);
             _btnGsBg.Click += (s, e) => SetGsMode(targetBg: true);
 
-            // ── PixelBlur ─────────────────────────────────────────────────────
+            
             _btnPixelMode.Click += (s, e) =>
             {
                 _pixelateMode = true;
@@ -317,10 +317,10 @@ namespace VisionEditCV
                 TriggerLivePreview();
             };
 
-            // ── Server ────────────────────────────────────────────────────────
+            
             _btnStartServer.Click += async (s, e) =>
             {
-                // If currently connecting, cancel
+                
                 if (_healthCts != null)
                 {
                     _healthCts.Cancel();
@@ -330,7 +330,7 @@ namespace VisionEditCV
                     SetStartServerButton(connecting: false, online: false);
                     return;
                 }
-                // If disconnected, retry connection
+                
                 await StartServerAsync();
             };
             _txtServerUrl.TextChanged += (s, e) => _client.BaseUrl = _txtServerUrl.Text.Trim();
@@ -338,7 +338,7 @@ namespace VisionEditCV
 
         private void WireResizeHandlers()
         {
-            // Server URL textbox/status label fill available width
+            
             _serverPanel.Resize += (s, e) =>
             {
                 int w = _serverPanel.ClientSize.Width - _serverPanel.Padding.Horizontal;
@@ -346,7 +346,7 @@ namespace VisionEditCV
                 _lblServerStatus.Width = w;
             };
 
-            // Re-run layout after the form is fully rendered (sizes are finalised)
+            
             Shown += (s, e) => BeginInvoke(() =>
             {
                 EffectSubPanelResize(_effectSubPanel, EventArgs.Empty);
@@ -354,7 +354,7 @@ namespace VisionEditCV
                 TitleBarChipsResize(_windowTitleBar, EventArgs.Empty);
             });
 
-            // Keep layouts correct on every resize
+            
             Resize += (s, e) =>
             {
                 TopBarResize(_topBar, EventArgs.Empty);
@@ -369,9 +369,9 @@ namespace VisionEditCV
             sc.ValueChanged += (s, e) => TriggerLivePreview();
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Image / Canvas
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private void OpenImageFile()
         {
@@ -416,7 +416,7 @@ namespace VisionEditCV
 
         private void RightPanelResize(object sender, EventArgs e)
         {
-            // Toggle strip always fills the full left edge, ignoring panel padding
+            
             _btnToggleRight.Location = new Point(0, 0);
             _btnToggleRight.Size = new Size(26, _rightPanel.Height);
         }
@@ -432,27 +432,27 @@ namespace VisionEditCV
 
             bool isBbox = mode == CanvasMode.BoundingBox;
 
-            // BBox active: dark teal fill + cyan border + cyan text
+            
             _btnBBox.BackColor = isBbox ? Color.FromArgb(14, 48, 52) : Color.Transparent;
             _btnBBox.ForeColor = isBbox ? _Cyan : _TextMain;
             _btnBBox.FlatAppearance.BorderSize = isBbox ? 2 : 0;
             _btnBBox.FlatAppearance.BorderColor = _Cyan;
 
-            // Prompt toggle
+            
             _btnPrompt.BackColor = isBbox ? Color.Transparent : Color.FromArgb(14, 48, 52);
             _btnPrompt.ForeColor = isBbox ? _TextMain : _Cyan;
             _btnPrompt.FlatAppearance.BorderSize = isBbox ? 0 : 2;
             _btnPrompt.FlatAppearance.BorderColor = _Cyan;
 
-            // Show prompt box only in Prompt mode; Segment button is always visible
+            
             _promptBox.Visible = !isBbox;
 
             _canvas.Invalidate();
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Segmentation
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private async Task RunSegmentation()
         {
@@ -539,9 +539,9 @@ namespace VisionEditCV
             }
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Effect activation
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private void SetArtMode(bool stylize)
         {
@@ -558,16 +558,16 @@ namespace VisionEditCV
         private void SetStickerBgMode(string mode)
         {
             _stickerBgMode = mode;
-            // Sync dropdown selection without re-firing the event
+            
             int idx = mode switch { "Solid" => 1, "Image" => 2, "Transparent" => 3, _ => 0 };
             if (_cmbStBgMode.SelectedIndex != idx)
                 _cmbStBgMode.SelectedIndex = idx;
-            // Hide both side controls first so layout runs with nothing visible
+            
             _stBgColorSwatch.Visible = false;
             _btnStickerUploadBg.Visible = false;
-            // Re-run layout to size the combo to full width before showing anything
+            
             EffectSubPanelResize(_effectSubPanel, EventArgs.Empty);
-            // Now show whichever control belongs to this mode (already correctly positioned)
+            
             _stBgColorSwatch.Visible = mode == "Solid";
             _btnStickerUploadBg.Visible = mode == "Image";
             TriggerLivePreview();
@@ -595,7 +595,7 @@ namespace VisionEditCV
 
         private void DeactivateEffect()
         {
-            // Cancel any in-flight preview task first
+            
             _previewCts?.Cancel();
             _previewCts?.Dispose();
             _previewCts = null;
@@ -619,7 +619,7 @@ namespace VisionEditCV
             _btnResetEffect.Visible = false;
             _effectSubPanel.Visible = false;
 
-            // Clear the live preview and any transformed mask override
+            
             _canvas.SetProcessedBitmap(null);
             _canvas.SetDisplayMaskOverride(null);
         }
@@ -633,7 +633,7 @@ namespace VisionEditCV
                 return;
             }
 
-            // Clicking the already-active effect deselects it
+            
             if (_activeEffect == effect)
             {
                 DeactivateEffect();
@@ -648,7 +648,7 @@ namespace VisionEditCV
                 btn.BackColor = _BgButton;
                 btn.ForeColor = _TextMain;
                 btn.FlatAppearance.BorderSize = 0;
-                btn.FlatAppearance.BorderColor = _BgButton; // can't use Transparent here
+                btn.FlatAppearance.BorderColor = _BgButton; 
             }
 
             var activeBtn = effect switch
@@ -663,7 +663,7 @@ namespace VisionEditCV
             };
             if (activeBtn != null)
             {
-                // Active state: dark teal fill + cyan text + cyan border (matches reference)
+                
                 activeBtn.BackColor = Color.FromArgb(14, 48, 52);
                 activeBtn.ForeColor = _Cyan;
                 activeBtn.FlatAppearance.BorderSize = 2;
@@ -687,33 +687,33 @@ namespace VisionEditCV
 
             if (activePanel != null) activePanel.Visible = true;
 
-            // Hide placeholder when an effect is selected
+            
             _lblNoEffect.Visible = activePanel == null;
 
             bool showButtons = activePanel != null;
 
-            // Show effect bar below image FIRST so the panel has a valid width for layout
+            
             _effectSubPanel.Visible = showButtons;
 
-            // Show Apply/Reset buttons for all real effects
+            
             _btnApplyEffect.Visible = showButtons;
             _btnResetEffect.Visible = showButtons;
 
-            // Re-run proportional layout now that panel is visible and has correct width
+            
             if (showButtons)
             {
                 _effectSubPanel.PerformLayout();
                 EffectSubPanelResize(_effectSubPanel, EventArgs.Empty);
-                // Deferred second pass in case WinForms finalises the size asynchronously
+                
                 BeginInvoke(() => EffectSubPanelResize(_effectSubPanel, EventArgs.Empty));
             }
 
             TriggerLivePreview();
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Apply effect (commit preview as new working image)
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private void ResetCurrentEffect()
         {
@@ -760,7 +760,7 @@ namespace VisionEditCV
             if (string.IsNullOrEmpty(_activeEffect)) return;
             if (_canvas.OriginalBitmap == null) return;
 
-            // Cancel any pending live preview
+            
             _previewCts?.Cancel();
             _previewCts?.Dispose();
             _previewCts = null;
@@ -771,13 +771,13 @@ namespace VisionEditCV
 
             if (selectedMasks.Count == 0) return;
 
-            // Snapshot everything needed on the UI thread before going async
+            
             var effect = _activeEffect;
             var args = CaptureEffectArgs();
             var srcFull = (Bitmap)_canvas.OriginalBitmap.Clone();
 
-            // For Artistic: sigmaS was tuned at preview resolution (≤900px longest side).
-            // Scale it up proportionally so the full-res apply matches the preview look.
+            
+            
             if (effect == "Artistic")
             {
                 int longestSide = Math.Max(srcFull.Width, srcFull.Height);
@@ -785,8 +785,8 @@ namespace VisionEditCV
                     args = args with { ArtSigmaSScale = (float)longestSide / PreviewMaxDim };
             }
 
-            // Portrait and PixelBlur: kernel/block sizes were tuned at preview resolution.
-            // Scale them up so the full-res apply matches the preview look.
+            
+            
             if (effect == "Portrait" || effect == "PixelBlur")
             {
                 int longestSide = Math.Max(srcFull.Width, srcFull.Height);
@@ -800,7 +800,7 @@ namespace VisionEditCV
                 }
             }
 
-            // Disable apply button and show the loading overlay while processing
+            
             _btnApplyEffect.Enabled = false;
             SetLoading(true, "Applying effect...");
 
@@ -829,7 +829,7 @@ namespace VisionEditCV
                 _btnApplyEffect.Enabled = true;
             }
 
-            // Back on the UI thread — save pre-commit snapshot for sticker, then commit
+            
             if (_activeEffect == "Sticker")
             {
                 _preEffectSnapshot?.Dispose();
@@ -837,7 +837,7 @@ namespace VisionEditCV
             }
             else
             {
-                // Non-sticker apply invalidates any sticker snapshot (chaining scenario)
+                
                 _preEffectSnapshot?.Dispose();
                 _preEffectSnapshot = null;
             }
@@ -845,8 +845,8 @@ namespace VisionEditCV
             _canvas.CommitProcessedAsOriginal(result);
             result.Dispose();
 
-            // Bake the sticker transform into the stored masks so the overlay
-            // contour permanently matches the new subject position.
+            
+            
             if (_activeEffect == "Sticker")
             {
                 float scale = args.StScale / 10f;
@@ -863,15 +863,15 @@ namespace VisionEditCV
             _appliedEffects.Add(GetEffectDisplayName(_activeEffect));
             RebuildAppliedEffectsChips();
 
-            // Deactivate so the effect isn't re-applied on top of the committed result
+            
             DeactivateEffect();
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Async debounced preview
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
-        // Effects that are computationally heavy — use a downscaled image for preview
+        
         private static readonly HashSet<string> _heavyEffects = new() { "Artistic", "Sticker", "Portrait", "PixelBlur" };
         private const int PreviewMaxDim = 900;
         private const int DebounceMs = 30;
@@ -882,13 +882,13 @@ namespace VisionEditCV
             if (string.IsNullOrEmpty(_activeEffect)) return;
             if (_canvas.OriginalBitmap == null) return;
 
-            // Cancel any pending preview
+            
             _previewCts?.Cancel();
             _previewCts?.Dispose();
             _previewCts = new CancellationTokenSource();
             var token = _previewCts.Token;
 
-            // Collect selected masks and snapshot all control state on the UI thread
+            
             var selectedMasks = new List<float[,]>();
             for (int i = 0; i < _canvas.Masks.Count; i++)
                 if (_canvas.MaskSelected[i]) selectedMasks.Add(_canvas.Masks[i]);
@@ -912,8 +912,8 @@ namespace VisionEditCV
                     await Task.Delay(debounce, token);
                     token.ThrowIfCancellationRequested();
 
-                    // Wait for any in-flight render to finish — semaphore releases immediately
-                    // when the previous render completes, no polling required
+                    
+                    
                     await _previewSem.WaitAsync(token);
                     try
                     {
@@ -921,8 +921,8 @@ namespace VisionEditCV
 
                         Bitmap src = heavy ? ScaleForPreview(srcFull, PreviewMaxDim) : srcFull;
 
-                        // For Sticker previews: scale border thickness to match the
-                        // preview resolution so it looks the same as at full resolution.
+                        
+                        
                         var renderArgs = (effect == "Sticker" && !ReferenceEquals(src, srcFull))
                             ? args with { StThicknessScale = (float)src.Width / srcFull.Width }
                             : args;
@@ -943,9 +943,9 @@ namespace VisionEditCV
                         if (heavy && !ReferenceEquals(src, srcFull)) src.Dispose();
                         token.ThrowIfCancellationRequested();
 
-                        // For Sticker: transform the selected masks to match the
-                        // scale+rotation applied to the subject, so the overlay contour
-                        // stays in sync with the transformed pixels.
+                        
+                        
+                        
                         List<float[,]>? transformedMasks = null;
                         if (effect == "Sticker")
                         {
@@ -968,7 +968,7 @@ namespace VisionEditCV
                     }
                     finally { _previewSem.Release(); }
                 }
-                catch (OperationCanceledException) { /* stale request — discard */ }
+                catch (OperationCanceledException) {  }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Preview error: {ex.Message}");
@@ -978,8 +978,8 @@ namespace VisionEditCV
             }, token);
         }
 
-        /// <summary>Returns a copy scaled so the longest side is at most <paramref name="maxDim"/> pixels.
-        /// Returns the original if it is already within that limit.</summary>
+        
+        
         private static Bitmap ScaleForPreview(Bitmap src, int maxDim)
         {
             if (src.Width <= maxDim && src.Height <= maxDim) return src;
@@ -993,9 +993,9 @@ namespace VisionEditCV
             return bmp;
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Effect parameter snapshot
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private record EffectArgs(
             Color TintColor, float TintStrength, int Brightness, float Contrast,
@@ -1043,9 +1043,9 @@ namespace VisionEditCV
             GsTargetBg: _gsTargetBgMode
         );
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Effect application
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private Bitmap? ApplyEffectArgs(string effect, Bitmap image, float[,] mask, EffectArgs a)
         {
@@ -1096,7 +1096,7 @@ namespace VisionEditCV
                 scaleFactor: a.StScale / 10f,
                 rotationAngle: a.StRotation);
 
-            // Transparent background: return the BGRA sticker directly
+            
             if (a.StickerTransparentBg)
             {
                 a.StickerImageBg?.Dispose();
@@ -1110,8 +1110,8 @@ namespace VisionEditCV
                 bg = ImageEffects.SolidColorBackground(a.StickerSolidColor, image.Width, image.Height);
             else if (a.StickerImageBg != null)
             {
-                // Resize uploaded background to exactly match source image dimensions
-                // so CompositeSticker always works on matching canvas sizes
+                
+                
                 bg = new Bitmap(image.Width, image.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
                 using var g2 = Graphics.FromImage(bg);
                 g2.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
@@ -1125,7 +1125,7 @@ namespace VisionEditCV
             var result = ImageEffects.CompositeSticker(sticker, bg);
             sticker.Dispose();
             bg.Dispose();
-            a.StickerImageBg?.Dispose(); // cloned snapshot
+            a.StickerImageBg?.Dispose(); 
             return result;
         }
 
@@ -1157,9 +1157,9 @@ namespace VisionEditCV
             return inv;
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Sticker background picker
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private void PickStickerBackground()
         {
@@ -1176,9 +1176,9 @@ namespace VisionEditCV
             }
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Applied effects tracking
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private static string GetEffectDisplayName(string effect) => effect switch
         {
@@ -1193,7 +1193,7 @@ namespace VisionEditCV
 
         private void RebuildAppliedEffectsChips()
         {
-            // Dispose existing chip controls before clearing (they own Font objects)
+            
             foreach (Control c in _appliedEffectsPanel.Controls)
                 c.Dispose();
             _appliedEffectsPanel.Controls.Clear();
@@ -1220,17 +1220,17 @@ namespace VisionEditCV
                 _appliedEffectsPanel.Controls.Add(chip);
             }
 
-            // Defer to after the message pump so the title bar has its final
-            // ClientSize, and the FlowLayoutPanel has completed its own layout
-            // pass — otherwise chips can appear at (0,0) or stay invisible.
+            
+            
+            
             BeginInvoke(() =>
             {
                 TitleBarChipsResize(_windowTitleBar, EventArgs.Empty);
                 _appliedEffectsPanel.Visible = true;
                 _btnResetAll.Visible = true;
-                // Ensure the chips panel and button sit above all other title-bar
-                // children (dock layout can silently push non-docked controls under
-                // docked siblings during the initial layout pass).
+                
+                
+                
                 _appliedEffectsPanel.BringToFront();
                 _btnResetAll.BringToFront();
                 _windowTitleBar.Refresh();
@@ -1239,7 +1239,7 @@ namespace VisionEditCV
 
         private void ResetAllEffects()
         {
-            // Cancel any in-flight preview before touching bitmaps
+            
             _previewCts?.Cancel();
             _previewCts?.Dispose();
             _previewCts = null;
@@ -1249,7 +1249,7 @@ namespace VisionEditCV
             _preEffectSnapshot = null;
             RebuildAppliedEffectsChips();
 
-            // Reload the original image from disk without clearing masks or zoom
+            
             if (_currentImagePath != null)
             {
                 _canvas.RestoreOriginalFromFile(_currentImagePath);
@@ -1259,9 +1259,9 @@ namespace VisionEditCV
             }
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Save
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private void SaveImage()
         {
@@ -1323,9 +1323,9 @@ namespace VisionEditCV
             }
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Loading overlay
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private void SetLoading(bool loading, string message = "Segmenting... (server may take 6–7 min to start)")
         {
@@ -1335,13 +1335,13 @@ namespace VisionEditCV
             _btnSegment.Enabled = !loading;
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        //  Logic – Start Server
-        // ═════════════════════════════════════════════════════════════════════
+        
+        
+        
 
         private async Task StartServerAsync()
         {
-            // If already polling, cancel and restart
+            
             if (_healthCts != null)
             {
                 _healthCts.Cancel();
@@ -1404,7 +1404,7 @@ namespace VisionEditCV
                 _btnStartServer.ForeColor = Color.White;
             }
 
-            // Re-run top bar layout so the button resizes to fit its new text
+            
             TopBarResize(_topBar, EventArgs.Empty);
         }
 
@@ -1415,7 +1415,7 @@ namespace VisionEditCV
             _lblServerStatus.ForeColor = color;
         }
 
-        // ── Layout event handlers (wired in Designer) ────────────────────────
+        
 
         private void EffectSubPanelResize(object sender, EventArgs e)
         {
@@ -1423,25 +1423,25 @@ namespace VisionEditCV
             if (panel.Width <= 0 || panel.Height <= 0) return;
 
             const int pad = 14;
-            const int gap = 16; // gap between groups
+            const int gap = 16; 
             const int bGap = 4;
             const int minBtnW = 60;
             const int minSlidW = 120;
 
-            // ── Apply / Reset — fixed right margin, stacked vertically ──────────
+            
             int cy = panel.Height / 2;
             const int applyW = 68;
             const int resetW = 68;
             const int btnGap = 6;
             const int btnH = 40;
-            // Reserve a fixed column of 96px on the right for the two buttons
+            
             const int btnColW = 96;
             int stackH = btnH * 2 + btnGap;
             _btnApplyEffect.Width = applyW;
             _btnApplyEffect.Height = btnH;
             _btnResetEffect.Width = resetW;
             _btnResetEffect.Height = btnH;
-            // Centre the buttons within the reserved column
+            
             int btnLeft = panel.Width - btnColW + (btnColW - applyW) / 2;
             _btnApplyEffect.Left = btnLeft;
             _btnResetEffect.Left = btnLeft;
@@ -1449,7 +1449,7 @@ namespace VisionEditCV
             _btnResetEffect.Top = _btnApplyEffect.Top + btnH + btnGap;
 
             int availH = panel.Height - panel.Padding.Vertical;
-            // Flow fills everything to the left of the reserved button column
+            
             int flowW = panel.Width - btnColW - pad * 2;
 
             foreach (var flow in new FlowLayoutPanel[] { _cgFlow, _artFlow, _stFlow, _pbFlow, _ptFlow, _gsFlow })
@@ -1466,20 +1466,20 @@ namespace VisionEditCV
                 int count = groups.Count;
                 if (count == 0) continue;
 
-                // ── Natural width per group ──────────────────────────────────────
+                
                 int[] natural = groups.Select(grp =>
                 {
                     var vb = grp.Controls.OfType<DarkButton>().Where(b => b.Visible).ToList();
                     var cmb = grp.Controls.OfType<ComboBox>().FirstOrDefault();
                     if (cmb != null)
                     {
-                        // Measure widest item text + left padding (10) + arrow zone (26) + margin
+                        
                         int maxTextW = cmb.Items.Count > 0
                             ? cmb.Items.Cast<object>()
                                 .Max(it => TextRenderer.MeasureText(it?.ToString() ?? "", cmb.Font).Width)
                             : 60;
-                        int cmbNatural = maxTextW + 10 + 26 + 8; // text + left-pad + arrow + right-margin
-                        // Always reserve side space if the group has a swatch OR upload btn (either may be hidden)
+                        int cmbNatural = maxTextW + 10 + 26 + 8; 
+                        
                         var hasSideCtrl = grp.Controls.OfType<ColorSwatch>().Any()
                                        || grp.Controls.OfType<DarkButton>().Any(b => b.Name == "_btnStickerUploadBg");
                         int extraW = hasSideCtrl ? 8 + 34 : 0;
@@ -1502,14 +1502,14 @@ namespace VisionEditCV
                 for (int i = 0; i < groups.Count; i++)
                 {
                     var grp = groups[i];
-                    // Don't stretch combo groups — the side button must stay within bounds
+                    
                     bool isComboGroup = grp.Controls.OfType<ComboBox>().Any();
                     int grpW = natural[i] + (isComboGroup ? 0 : extra);
                     grp.Width = grpW;
                     grp.Height = availH;
                     grp.Margin = new Padding(0, 0, i < count - 1 ? gap : 0, 0);
 
-                    // ── Measure content height to centre vertically ──────────────
+                    
                     var lbl = grp.Controls.OfType<Label>().FirstOrDefault();
                     var slider = grp.Controls.OfType<SliderControl>().FirstOrDefault();
                     var combo = grp.Controls.OfType<ComboBox>().FirstOrDefault();
@@ -1530,17 +1530,17 @@ namespace VisionEditCV
                         : 0;
 
                     int innerContentH = Math.Max(slidH, Math.Max(btnBlockH, Math.Max(comboH, swatchH)));
-                    // Total content height: label + gap + (slider | buttons | combo | swatch)
+                    
                     int innerH = lblH + (lblH > 0 && innerContentH > 0 ? 4 : 0) + innerContentH;
                     int topOff = Math.Max(0, (availH - innerH) / 2);
 
-                    // Position label
+                    
                     if (lbl != null)
                         lbl.Top = topOff;
 
                     int contentY = topOff + lblH + (lblH > 0 ? 4 : 0);
 
-                    // Slider
+                    
                     if (slider != null)
                     {
                         slider.Width = grpW - 2;
@@ -1548,10 +1548,10 @@ namespace VisionEditCV
                         slider.Top = contentY;
                     }
 
-                    // ComboBox — positioned below label; swatch/upload share the same slot to the right
+                    
                     if (combo != null)
                     {
-                        // Always reserve side space if either control exists (visible or not)
+                        
                         var uploadBtn2 = grp.Controls.OfType<DarkButton>().FirstOrDefault(b => b.Name == "_btnStickerUploadBg");
                         var swatchAny = grp.Controls.OfType<ColorSwatch>().FirstOrDefault();
                         bool hasSide = swatchAny != null || uploadBtn2 != null;
@@ -1559,13 +1559,13 @@ namespace VisionEditCV
                         combo.Width = Math.Max(60, grpW - rightReserve);
                         combo.Left = 0;
                         combo.Top = contentY;
-                        // Position swatch (always, visible or not, so it's ready when shown)
+                        
                         if (swatchAny != null)
                         {
                             swatchAny.Left = combo.Width + 8;
                             swatchAny.Top = contentY + (combo.Height - swatchAny.Height) / 2;
                         }
-                        // Position upload button (always, visible or not)
+                        
                         if (uploadBtn2 != null)
                         {
                             uploadBtn2.Left = combo.Width + 8;
@@ -1574,7 +1574,7 @@ namespace VisionEditCV
                     }
                     else
                     {
-                        // ColorSwatch (no combo)
+                        
                         if (swatch != null)
                         {
                             swatch.Left = 0;
@@ -1582,7 +1582,7 @@ namespace VisionEditCV
                         }
                     }
 
-                    // Buttons (2-row wrap when count > 2)
+                    
                     if (visBtns.Count > 0)
                     {
                         int bW = Math.Max(40, (grpW - bGap * (cols - 1)) / cols);
@@ -1609,19 +1609,19 @@ namespace VisionEditCV
         private void TitleBarChipsResize(object? sender, EventArgs e)
         {
             if (sender is not Panel bar) return;
-            // Run even when hidden — positions must be correct before first show.
+            
             if (_appliedEffects.Count == 0) return;
 
-            // Chips sit in the title bar just after the app title label (DockStyle.Left).
-            // Read its actual width at runtime so the chips never overlap the title text.
-            // Window chrome buttons (─ 🗖 ✕) are DockStyle.Right — sum their widths to find
-            // their left edge reliably (c.Left can be stale before dock layout settles).
+            
+            
+            
+            
             const int padL = 12;
             const int gap = 8;
-            const int padR = 24; // breathing room before nav buttons
+            const int padR = 24; 
             const int chipH = 32;
 
-            int titleW = _lblWindowTitle.Width;  // real width, respects runtime layout
+            int titleW = _lblWindowTitle.Width;  
 
             int dockRightW = 0;
             foreach (Control c in bar.Controls)
@@ -1632,14 +1632,14 @@ namespace VisionEditCV
             int x = titleW + padL;
             int cy = bar.ClientSize.Height / 2;
 
-            // Chips flow panel — explicit height so centering works
+            
             int chipsW = Math.Max(0, rightEdge - x - gap - _btnResetAll.Width);
             _appliedEffectsPanel.Width = chipsW;
             _appliedEffectsPanel.Height = chipH;
             _appliedEffectsPanel.Left = x;
             _appliedEffectsPanel.Top = cy - chipH / 2;
 
-            // Reset All button — immediately right of chips
+            
             _btnResetAll.Left = x + chipsW + gap;
             _btnResetAll.Top = cy - _btnResetAll.Height / 2;
         }
@@ -1647,7 +1647,7 @@ namespace VisionEditCV
         private void TitleBarPaint(object sender, PaintEventArgs e)
         {
             if (sender is not Control bar) return;
-            // Single cyan accent line at the bottom — the only decoration
+            
             using var pen = new Pen(Color.FromArgb(0, 160, 180), 1);
             e.Graphics.DrawLine(pen, 0, bar.Height - 1, bar.Width, bar.Height - 1);
         }
@@ -1660,7 +1660,7 @@ namespace VisionEditCV
             int pad = 24;
             int gap = 10;
 
-            // ── Left group ────────────────────────────────────────────────────
+            
             int x = pad;
             _lblSelMode.Left = x;
             _lblSelMode.Width = 36;
@@ -1676,7 +1676,7 @@ namespace VisionEditCV
 
             int leftEdge = x;
 
-            // ── Right group — size buttons to their current text ─────────────
+            
             _btnStartServer.Width = TextRenderer.MeasureText(_btnStartServer.Text, _btnStartServer.Font).Width + 72;
             _btnStartServer.Left = w - pad - _btnStartServer.Width;
 
@@ -1685,11 +1685,11 @@ namespace VisionEditCV
 
             int rightEdge = _btnSegment.Left - pad;
 
-            // ── Prompt box stretches between the two groups ───────────────────
+            
             _promptBox.Left = leftEdge;
             _promptBox.Width = Math.Max(120, rightEdge - leftEdge);
 
-            // ── Vertically center all controls ────────────────────────────────
+            
             foreach (Control c in bar.Controls)
             {
                 if (c == _serverPanel) continue;

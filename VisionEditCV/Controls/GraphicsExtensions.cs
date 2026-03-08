@@ -1,11 +1,11 @@
 namespace VisionEditCV
 {
-    /// <summary>
-    /// Extension helpers for <see cref="Graphics"/> used by custom controls.
-    /// </summary>
+    
+    
+    
     internal static class GraphicsExtensions
     {
-        /// <summary>Fills a rectangle with rounded corners using the supplied brush.</summary>
+        
         public static void FillRoundedRect(
             this Graphics g, Brush brush, RectangleF rect, float radius)
         {
@@ -19,7 +19,7 @@ namespace VisionEditCV
             g.FillPath(brush, path);
         }
 
-        /// <summary>Draws the outline of a rectangle with rounded corners.</summary>
+        
         public static void DrawRoundedRect(
             this Graphics g, Pen pen, RectangleF rect, float radius)
         {

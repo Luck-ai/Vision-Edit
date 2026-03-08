@@ -1,15 +1,15 @@
 namespace VisionEditCV
 {
-    /// <summary>
-    /// A coloured rectangle that opens a <see cref="ColorDialog"/> when clicked.
-    /// Raises <see cref="ColorChanged"/> after the user picks a new colour.
-    /// </summary>
+    
+    
+    
+    
     [System.ComponentModel.DesignerCategory("Component")]
     public class ColorSwatch : Control
     {
         private Color _color = Color.White;
 
-        /// <summary>The currently selected colour.</summary>
+        
         [System.ComponentModel.Browsable(true)]
         [System.ComponentModel.DefaultValue(typeof(Color), "White")]
         [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Visible)]
@@ -19,7 +19,7 @@ namespace VisionEditCV
             set { _color = value; Invalidate(); }
         }
 
-        /// <summary>Fired after the user picks a new colour via the colour dialog.</summary>
+        
         public event EventHandler? ColorChanged;
 
         public ColorSwatch()

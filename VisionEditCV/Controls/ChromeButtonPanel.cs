@@ -1,20 +1,20 @@
 namespace VisionEditCV.Controls
 {
-    /// <summary>
-    /// A single owner-drawn control that renders the three window-chrome buttons
-    /// (minimize, maximize, close) as one unified pill shape — no child controls,
-    /// no layering issues.
-    ///
-    /// Layout (left → right):  [─ Minimize][🗖 Maximize][✕ Close]
-    /// Each slot is exactly 1/3 of the control width.
-    ///
-    /// Events: <see cref="MinimizeClicked"/>, <see cref="MaximizeClicked"/>,
-    ///         <see cref="CloseClicked"/>.
-    /// </summary>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     [System.ComponentModel.DesignerCategory("Component")]
     public class ChromeButtonPanel : Control
     {
-        // ── Colours ──────────────────────────────────────────────────────────
+        
         private static readonly Color TitleBarBg   = Color.FromArgb(18,  18,  24);
         private static readonly Color PillBg        = Color.FromArgb(38,  40,  52);
         private static readonly Color HoverMin      = Color.FromArgb(55,  57,  75);
@@ -23,16 +23,16 @@ namespace VisionEditCV.Controls
         private static readonly Color AccentLine    = Color.FromArgb(0,  160, 180);
         private static readonly Color IconColor     = Color.FromArgb(200, 200, 210);
 
-        // ── Pill geometry ─────────────────────────────────────────────────────
+        
         private const int PillRadius = 7;
-        private const int PillVInset = 7;   // top/bottom margin inside the control height
+        private const int PillVInset = 7;   
 
-        // ── Hit state ────────────────────────────────────────────────────────
+        
         private enum Zone { None, Min, Max, Close }
         private Zone _hovered = Zone.None;
         private Zone _pressed = Zone.None;
 
-        // ── Events ────────────────────────────────────────────────────────────
+        
         public event EventHandler? MinimizeClicked;
         public event EventHandler? MaximizeClicked;
         public event EventHandler? CloseClicked;
@@ -46,10 +46,10 @@ namespace VisionEditCV.Controls
                 ControlStyles.ResizeRedraw,
                 true);
             Cursor = Cursors.Default;
-            BackColor = TitleBarBg;   // matches the title bar; panel edges are invisible
+            BackColor = TitleBarBg;   
         }
 
-        // ── Zone helpers ─────────────────────────────────────────────────────
+        
         private int SlotW => Width / 3;
 
         private Zone HitZone(Point p)
@@ -59,7 +59,7 @@ namespace VisionEditCV.Controls
             return slot switch { 0 => Zone.Min, 1 => Zone.Max, _ => Zone.Close };
         }
 
-        // ── Mouse ─────────────────────────────────────────────────────────────
+        
         protected override void OnMouseMove(MouseEventArgs e)
         {
             var z = HitZone(e.Location);
@@ -92,7 +92,7 @@ namespace VisionEditCV.Controls
             base.OnMouseUp(e);
         }
 
-        // ── Paint ─────────────────────────────────────────────────────────────
+        
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
@@ -102,31 +102,31 @@ namespace VisionEditCV.Controls
             int w = Width, h = Height;
             int sw = SlotW;
 
-            // 1. Fill entire control with title-bar background (makes edges invisible)
+            
             g.Clear(TitleBarBg);
 
-            // 2. Build pill rect — vertically centred
+            
             float py = PillVInset;
             float ph = h - PillVInset * 2;
             float pr = PillRadius;
             var pill = new RectangleF(0, py, w - 1, ph);
 
-            // 3. Paint each slot's background (hover/press or pill base)
-            // We paint slots individually so hover only highlights one zone, then
-            // we clip the whole thing to the pill path for clean rounded corners.
+            
+            
+            
 
-            // Set up clip to pill shape
+            
             using var pillPath = RoundedPath(pill, pr);
             g.SetClip(pillPath);
 
-            // Slot backgrounds
+            
             PaintSlot(g, new RectangleF(0,       py, sw,     ph), Zone.Min);
             PaintSlot(g, new RectangleF(sw,      py, sw,     ph), Zone.Max);
             PaintSlot(g, new RectangleF(sw * 2,  py, w - sw * 2, ph), Zone.Close);
 
             g.ResetClip();
 
-            // 4. Draw icons centred in each slot
+            
             using var iconFont = new Font("Segoe UI Symbol", 10f, FontStyle.Regular);
             using var iconBrush = new SolidBrush(IconColor);
             var sf = new StringFormat
@@ -136,13 +136,13 @@ namespace VisionEditCV.Controls
                 FormatFlags   = StringFormatFlags.NoWrap
             };
 
-            // Slot rects for icon centering use full height so text is centred in pill
+            
             g.DrawString("─", iconFont, iconBrush, new RectangleF(0,      py, sw,          ph), sf);
             g.DrawString("🗖", iconFont, iconBrush, new RectangleF(sw,     py, sw,          ph), sf);
             g.DrawString("✕", iconFont, iconBrush, new RectangleF(sw * 2, py, w - sw * 2,  ph), sf);
 
-            // 5. Bottom accent line — full width, at the very bottom of the control
-            //    This continues the title-bar cyan line seamlessly through the panel.
+            
+            
             using var accentPen = new Pen(AccentLine, 1);
             g.DrawLine(accentPen, 0, h - 1, w, h - 1);
         }
