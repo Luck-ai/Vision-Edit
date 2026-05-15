@@ -72,8 +72,8 @@ Notes:
 
 ## Run with Visual Studio
 
-1. Open `VisionEditCV.slnx`.
-2. Set `VisionEditCV` as startup project (if needed).
+1. Open `VisionEditCV.sln`.
+2. Set `VisionEditCV.Desktop` as startup project (if needed).
 3. Press `F5`.
 
 ### Run from Terminal
@@ -128,4 +128,3 @@ VisionEditCV/
 	- Retry after waiting for server warm-up.
 - No masks returned:
 	- Try a different prompt or adjust bounding boxes.
-
