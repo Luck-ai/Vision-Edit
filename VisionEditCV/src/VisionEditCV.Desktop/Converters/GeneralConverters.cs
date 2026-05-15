@@ -2,7 +2,6 @@ using System;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Data.Converters;
-using Avalonia.Layout;
 
 namespace VisionEditCV.Desktop.Converters;
 
@@ -19,66 +18,6 @@ public class BoolToDoubleConverter : IValueConverter
             }
         }
         return 0.0;
-    }
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
-}
-
-public class BoolToThicknessConverter : IValueConverter
-{
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is bool b && parameter is string p)
-        {
-            var parts = p.Split(',');
-            if (parts.Length == 2)
-            {
-                return b ? new Thickness(double.Parse(parts[0])) : new Thickness(double.Parse(parts[1]));
-            }
-        }
-        return new Thickness(0);
-    }
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
-}
-
-public class BoolToAlignmentConverter : IValueConverter
-{
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is bool b && parameter is string p)
-        {
-            var parts = p.Split(',');
-            if (parts.Length == 2)
-            {
-                return b ? Enum.Parse<HorizontalAlignment>(parts[0]) : Enum.Parse<HorizontalAlignment>(parts[1]);
-            }
-        }
-        return HorizontalAlignment.Left;
-    }
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
-}
-
-public class BoolToStringConverter : IValueConverter
-{
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is bool b && parameter is string p)
-        {
-            var parts = p.Split(',');
-            if (parts.Length == 2)
-            {
-                return b ? parts[0] : parts[1];
-            }
-        }
-        return string.Empty;
-    }
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
-}
-
-public class BoolToArrowConverter : IValueConverter
-{
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        return (value is bool b && b) ? "‹" : "›";
     }
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
 }
@@ -100,6 +39,23 @@ public class CollectionCountToBoolConverter : IValueConverter
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
+}
+
+public class IntEqualsConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is int index && int.TryParse(parameter?.ToString(), out var target))
+            return index == target;
+        return false;
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isChecked && isChecked && int.TryParse(parameter?.ToString(), out var target))
+            return target;
+        return AvaloniaProperty.UnsetValue;
+    }
 }
 
 public class InverseBoolConverter : IValueConverter

@@ -8,9 +8,20 @@
 
   <ItemGroup>
     <PackageReference Include="Emgu.CV" Version="4.12.0.5764" />
-    <PackageReference Include="Emgu.CV.runtime.ubuntu-x64" Version="4.12.0.5764" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SkiaSharp" Version="3.119.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Linux')))">
+    <PackageReference Include="Emgu.CV.runtime.ubuntu-x64" Version="4.12.0.5764" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows')))">
+    <PackageReference Include="Emgu.CV.runtime.windows" Version="4.12.0.5764" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'osx-x64' Or '$(RuntimeIdentifier)' == 'osx-arm64' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX')))">
+    <PackageReference Include="Emgu.CV.runtime.macos" Version="4.12.0.5764" />
   </ItemGroup>
 
 </Project>

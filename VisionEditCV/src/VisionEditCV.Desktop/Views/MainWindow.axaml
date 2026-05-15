@@ -8,6 +8,7 @@
         xmlns:cp="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.ColorPicker"
         mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
         x:Class="VisionEditCV.Desktop.Views.MainWindow"
+        x:Name="Root"
         x:DataType="vm:MainWindowViewModel"
         Classes="main-window"
         Icon="/Assets/avalonia-logo.ico"
@@ -17,6 +18,14 @@
         Background="{DynamicResource AppBackgroundBrush}"
         ExtendClientAreaToDecorationsHint="True">
 
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenImageCommand}" CommandParameter="{Binding #Root}" />
+        <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveImageCommand}" CommandParameter="{Binding #Root}" />
+        <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoEffectCommand}" />
+        <KeyBinding Gesture="Ctrl+Enter" Command="{Binding SegmentCommand}" />
+        <KeyBinding Gesture="Escape" Command="{Binding ClearMasksCommand}" />
+    </Window.KeyBindings>
+
     <Window.Resources>
         <conv:EnumToBoolConverter x:Key="EnumToBoolConverter" />
         <conv:BoolToColorConverter x:Key="BoolToColorConverter" />
@@ -24,8 +33,7 @@
         <conv:CollectionCountToBoolConverter x:Key="CollectionCountToBoolConverter" />
         <conv:InverseBoolConverter x:Key="InverseBoolConverter" />
         <conv:BoolToDoubleConverter x:Key="BoolToDoubleConverter" />
-        <conv:BoolToArrowConverter x:Key="BoolToArrowConverter" />
-        <conv:BoolToThicknessConverter x:Key="BoolToThicknessConverter" />
+        <conv:IntEqualsConverter x:Key="IntEqualsConverter" />
     </Window.Resources>
 
     <Grid Background="{DynamicResource AppBackgroundBrush}" RowDefinitions="Auto, *, Auto">
@@ -34,21 +42,29 @@
              ZONE 1 · TOP BAR
              Lean composer-focused header
              ============================================================ -->
-        <Border Grid.Row="0" Padding="20,22,20,12">
+        <Border Grid.Row="0" Classes="top-bar" Padding="20,18,20,12">
             <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="20">
 
                 <!-- Brand -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <Border Width="34" Height="34" CornerRadius="9"
+                    <Border Width="32" Height="32" CornerRadius="8"
                             Background="{DynamicResource AccentSoftBrush}"
                             BorderBrush="{DynamicResource AccentMutedBrush}"
                             BorderThickness="1">
-                        <Path Data="{StaticResource IconLogo}" Width="17" Height="17"
-                              Fill="{DynamicResource AccentBrush}" Stretch="Uniform" />
+                        <Path Data="{StaticResource IconLogo}" Width="16" Height="16"
+                              Fill="{DynamicResource AccentBrush}" Stretch="Uniform"
+                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <StackPanel Spacing="0" VerticalAlignment="Center">
-                        <TextBlock Text="VisionEdit" Classes="h2" FontSize="14" />
-                        <TextBlock Text="NEURAL IMAGE STUDIO" Classes="label" FontSize="9" Opacity="0.7" />
+                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="VisionEdit" Classes="h2" FontSize="15" LetterSpacing="-0.02" />
+                        <Border Background="{DynamicResource AccentSoftBrush}"
+                                BorderBrush="{DynamicResource AccentMutedBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="5,2"
+                                HorizontalAlignment="Left">
+                            <TextBlock Text="NEURAL STUDIO" Classes="brand-badge" />
+                        </Border>
                     </StackPanel>
                 </StackPanel>
 
@@ -57,9 +73,7 @@
                             HorizontalAlignment="Center" VerticalAlignment="Center">
 
                     <!-- Tool mode toggle -->
-                    <Border Background="{DynamicResource PanelElevatedBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-                            CornerRadius="10" Padding="3">
+                    <Border Classes="tool-pill">
                         <StackPanel Orientation="Horizontal">
                             <RadioButton Classes="tool-btn" Content="BOX" MinWidth="58"
                                          IsChecked="{Binding SelectedTool, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Bounding Box'}"
@@ -87,9 +101,9 @@
                                     Padding="14,8"
                                     Margin="0,2,2,2"
                                     IsEnabled="{Binding CanRunSegment}"
-                                    ToolTip.Tip="Run segmentation">
+                                    ToolTip.Tip="Run segmentation (Ctrl+Enter)">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <Path Classes="icon" Data="{StaticResource IconBolt}" Width="13" Height="13" Stroke="#062028" />
+                                    <Path Classes="icon" Data="{StaticResource IconBolt}" Width="13" Height="13" Stroke="{DynamicResource OnAccentTextBrush}" />
                                     <TextBlock Text="{Binding SegmentButtonText}" FontSize="11" FontWeight="Bold" LetterSpacing="0.08" />
                                 </StackPanel>
                             </Button>
@@ -122,75 +136,16 @@
                             Classes="ghost"
                             Padding="12,7"
                             IsEnabled="{Binding CanRunConnectionCheck}"
-                            FontSize="11">
+                            FontSize="11"
+                            ToolTip.Tip="Test server connection">
                         <TextBlock Text="{Binding ConnectionButtonText}" LetterSpacing="0.05" />
                     </Button>
 
-                    <Button Classes="icon-button" ToolTip.Tip="Server URL">
-                        <Button.Flyout>
-                            <Flyout Placement="BottomEdgeAlignedRight">
-                                <Border Width="380" Background="{DynamicResource PanelElevatedBrush}"
-                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-                                        CornerRadius="10" Padding="14">
-                                    <StackPanel Spacing="12">
-                                        <TextBlock Text="SAM3 SERVER" Classes="h3" />
-                                        <TextBlock Text="API endpoint used for segmentation requests."
-                                                   Classes="label" FontSize="11" TextWrapping="Wrap" />
-                                        <TextBox Text="{Binding ServerUrl}"
-                                                 PlaceholderText="https://your-server.example"
-                                                 FontSize="12" />
-                                        <Button Command="{Binding CheckConnectionCommand}"
-                                                Classes="primary"
-                                                HorizontalAlignment="Stretch"
-                                                Height="36"
-                                                IsEnabled="{Binding CanRunConnectionCheck}">
-                                            <TextBlock Text="{Binding ConnectionButtonText}" FontSize="11" LetterSpacing="0.05" />
-                                        </Button>
-                                    </StackPanel>
-                                </Border>
-                            </Flyout>
-                        </Button.Flyout>
+                    <Button Command="{Binding SelectRightPanelTabCommand}"
+                            CommandParameter="Server"
+                            Classes="icon-button"
+                            ToolTip.Tip="Server settings">
                         <Path Classes="icon icon-muted" Data="{StaticResource IconServer}" Width="16" Height="16" />
-                    </Button>
-
-                    <Border Classes="section-divider" Width="1" Height="22" Margin="4,0" />
-
-                    <!-- History flyout -->
-                    <Button Classes="icon-button" ToolTip.Tip="Operation history">
-                        <Button.Flyout>
-                            <Flyout Placement="BottomEdgeAlignedRight">
-                                <Border Width="300" Background="{DynamicResource PanelElevatedBrush}"
-                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-                                        CornerRadius="10" Padding="14">
-                                    <StackPanel Spacing="10">
-                                        <TextBlock Text="OPERATION HISTORY" Classes="h3" />
-                                        <Border Classes="section-divider" />
-                                        <ItemsControl ItemsSource="{Binding History}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border Padding="10,7" CornerRadius="8"
-                                                            Background="{DynamicResource SurfaceBrush}" Margin="0,0,0,4">
-                                                        <StackPanel Orientation="Horizontal" Spacing="10">
-                                                            <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
-                                                            <TextBlock Text="{Binding}" FontSize="12" VerticalAlignment="Center" />
-                                                        </StackPanel>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                        <StackPanel Spacing="8" Margin="0,8,0,0"
-                                                    HorizontalAlignment="Center"
-                                                    IsVisible="{Binding History.Count, Converter={StaticResource CollectionCountToBoolConverter}, ConverterParameter='invert'}">
-                                            <Path Classes="icon icon-tertiary" Data="{StaticResource IconHistory}"
-                                                  Width="20" Height="20" HorizontalAlignment="Center" />
-                                            <TextBlock Text="No operations yet"
-                                                       Classes="label" HorizontalAlignment="Center" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-                            </Flyout>
-                        </Button.Flyout>
-                        <Path Classes="icon icon-muted" Data="{StaticResource IconHistory}" Width="16" Height="16" />
                     </Button>
 
                     <Button Command="{Binding ResetAllCommand}" Classes="icon-button" ToolTip.Tip="Reset entire project">
@@ -204,7 +159,7 @@
              ZONE 2 · WORKSPACE
              Left effects | Canvas + Inspector | Right masks
              ============================================================ -->
-        <Grid Grid.Row="1" ColumnDefinitions="Auto, *, Auto" Margin="20,0,20,4" ColumnSpacing="16">
+        <Grid Grid.Row="1" ColumnDefinitions="Auto, *, Auto" Margin="20,0,20,8" ColumnSpacing="18">
 
             <!-- ====================================================
                  LEFT PANEL · EFFECTS LIBRARY
@@ -260,7 +215,7 @@
                         <StackPanel Spacing="4">
 
                             <!-- ADJUST -->
-                            <TextBlock Text="ADJUST" Classes="h3" Margin="6,4,0,6" />
+                            <TextBlock Text="ADJUST" Classes="section-title" Margin="6,4,0,8" />
 
                             <RadioButton Classes="effect-card"
                                          Command="{Binding SelectEffectCommand}" CommandParameter="Color Grading"
@@ -297,7 +252,7 @@
                             </RadioButton>
 
                             <!-- STYLIZE -->
-                            <TextBlock Text="STYLIZE" Classes="h3" Margin="6,16,0,6" />
+                            <TextBlock Text="STYLIZE" Classes="section-title" />
 
                             <RadioButton Classes="effect-card"
                                          Command="{Binding SelectEffectCommand}" CommandParameter="Artistic Style"
@@ -334,7 +289,7 @@
                             </RadioButton>
 
                             <!-- MASK TOOLS -->
-                            <TextBlock Text="MASK TOOLS" Classes="h3" Margin="6,16,0,6" />
+                            <TextBlock Text="MASK TOOLS" Classes="section-title" />
 
                             <RadioButton Classes="effect-card"
                                          Command="{Binding SelectEffectCommand}" CommandParameter="Pixelation &amp; Blur"
@@ -404,17 +359,30 @@
             <!-- ====================================================
                  CENTER · CANVAS + BOTTOM INSPECTOR
                  ==================================================== -->
-            <Grid Grid.Column="1" RowDefinitions="*, Auto" RowSpacing="12">
+            <Grid Grid.Column="1" RowDefinitions="*, Auto" RowSpacing="10">
 
                 <!-- Canvas -->
                 <Border Grid.Row="0"
-                        Background="#06070A"
-                        CornerRadius="14"
+                        Background="{DynamicResource CanvasSurfaceBrush}"
+                        CornerRadius="16"
                         ClipToBounds="True"
                         BorderBrush="{DynamicResource BorderSubtleBrush}"
                         BorderThickness="1"
-                        BoxShadow="inset 0 0 32 0 #000000B0">
+                        BoxShadow="inset 0 0 40 0 #000000C0">
                     <Panel>
+
+                        <!-- Accent rail when image loaded -->
+                        <Border Height="2"
+                                VerticalAlignment="Top"
+                                IsVisible="{Binding HasImage}">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                                    <GradientStop Color="#00000000" Offset="0" />
+                                    <GradientStop Color="#4FD1FF" Offset="0.5" />
+                                    <GradientStop Color="#00000000" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
 
                         <!-- Loading rail at top -->
                         <ProgressBar VerticalAlignment="Top"
@@ -435,26 +403,27 @@
                             IsCompareMode="{Binding IsCompareMode}" />
 
                         <!-- Empty state -->
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20"
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16"
                                     IsVisible="{Binding CurrentImage, Converter={x:Static ObjectConverters.IsNull}}">
-                            <Border Width="86" Height="86" CornerRadius="22"
+                            <Border Width="72" Height="72" CornerRadius="18"
                                     Background="{DynamicResource AccentSoftBrush}"
                                     BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1">
-                                <Path Data="{StaticResource IconImage}" Width="34" Height="34"
+                                <Path Data="{StaticResource IconImage}" Width="28" Height="28"
                                       Stroke="{DynamicResource AccentBrush}"
                                       StrokeThickness="1.6"
                                       StrokeLineCap="Round"
                                       Stretch="Uniform"
                                       Fill="Transparent" />
                             </Border>
-                            <StackPanel Spacing="6">
-                                <TextBlock Text="No image loaded" Classes="h1" FontSize="18" HorizontalAlignment="Center" />
-                                <TextBlock Text="Import an image to draw boxes, prompt segments, and apply targeted effects."
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="No image loaded" Classes="h1" FontSize="16" HorizontalAlignment="Center" />
+                                <TextBlock Text="Import an image to segment regions and apply effects."
                                            Classes="label"
-                                           MaxWidth="380"
+                                           MaxWidth="340"
                                            TextAlignment="Center"
                                            TextWrapping="Wrap"
-                                           FontSize="11.5" />
+                                           FontSize="11"
+                                           Opacity="0.85" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
                                 <Button Command="{Binding OpenImageCommand}"
@@ -474,58 +443,57 @@
                         </StackPanel>
 
                         <!-- Floating canvas toolbar (top-right) -->
-                        <Border VerticalAlignment="Top" HorizontalAlignment="Right"
-                                Margin="0,12,12,0"
-                                Background="#CC0C0F16"
-                                BorderBrush="#1FFFFFFF" BorderThickness="1"
-                                CornerRadius="10" Padding="4"
+                        <Border Classes="canvas-toolbar"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Right"
+                                Margin="0,14,14,0"
                                 IsVisible="{Binding HasImage}">
-                            <StackPanel Orientation="Horizontal" Spacing="2">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
                                 <Button Command="{Binding ToggleCompareCommand}"
                                         Classes="toolbar-btn"
                                         Classes.active="{Binding IsCompareMode}"
-                                        ToolTip.Tip="Compare before/after">
-                                    <Path Classes="icon icon-muted" Data="{StaticResource IconCompare}" Width="14" Height="14" />
+                                        ToolTip.Tip="Compare — show original beside result">
+                                    <Path Classes="icon-toolbar" Data="{StaticResource IconCompare}" Width="18" Height="18" />
                                 </Button>
                                 <Button Command="{Binding ToggleHideMasksCommand}"
                                         Classes="toolbar-btn"
                                         IsEnabled="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}}"
-                                        ToolTip.Tip="Toggle mask visibility">
-                                    <Panel>
-                                        <Path Classes="icon icon-muted" Data="{StaticResource IconVisibility}" Width="14" Height="14"
+                                        ToolTip.Tip="Show or hide mask overlays">
+                                    <Panel Width="18" Height="18">
+                                        <Path Classes="icon-toolbar" Data="{StaticResource IconVisibility}" Width="18" Height="18"
                                               IsVisible="{Binding AreMasksHidden, Converter={StaticResource InverseBoolConverter}}" />
-                                        <Path Classes="icon icon-muted" Data="{StaticResource IconVisibilityOff}" Width="14" Height="14"
+                                        <Path Classes="icon-toolbar" Data="{StaticResource IconVisibilityOff}" Width="18" Height="18"
                                               IsVisible="{Binding AreMasksHidden}" />
                                     </Panel>
                                 </Button>
                                 <Button Command="{Binding UndoEffectCommand}"
                                         Classes="toolbar-btn"
                                         IsEnabled="{Binding CanUndoEffect}"
-                                        ToolTip.Tip="Undo last effect">
-                                    <Path Classes="icon icon-muted" Data="{StaticResource IconUndo}" Width="14" Height="14" />
+                                        ToolTip.Tip="Undo last applied effect (Ctrl+Z)">
+                                    <Path Classes="icon-toolbar" Data="{StaticResource IconUndo}" Width="18" Height="18" />
                                 </Button>
-                                <Border Background="{DynamicResource BorderSubtleBrush}" Width="1" Margin="2,4" />
+                                <Border Classes="canvas-toolbar-divider" />
                                 <Button Command="{Binding ClearMasksCommand}"
-                                        Classes="toolbar-btn"
+                                        Classes="toolbar-btn danger"
                                         IsEnabled="{Binding CanClearWorkspace}"
-                                        ToolTip.Tip="Clear all masks">
-                                    <Path Classes="icon icon-muted" Data="{StaticResource IconClose}" Width="13" Height="13" />
+                                        ToolTip.Tip="Clear all masks and boxes (Esc)">
+                                    <Path Classes="icon-toolbar" Data="{StaticResource IconClear}" Width="18" Height="18" />
                                 </Button>
                             </StackPanel>
                         </Border>
 
                         <!-- Compare badge -->
-                        <Border IsVisible="{Binding IsCompareMode}"
-                                VerticalAlignment="Top" HorizontalAlignment="Center"
-                                Background="{DynamicResource AccentBrush}"
-                                Padding="14,5" CornerRadius="0,0,8,8">
-                            <TextBlock Text="ORIGINAL REFERENCE" FontSize="10" FontWeight="Bold"
-                                       Foreground="#062028" LetterSpacing="0.1" />
+                        <Border Classes="compare-badge"
+                                IsVisible="{Binding IsCompareMode}"
+                                VerticalAlignment="Top"
+                                HorizontalAlignment="Center">
+                            <TextBlock Text="◧  ORIGINAL REFERENCE" FontSize="10" FontWeight="Bold"
+                                       Foreground="{DynamicResource OnAccentTextBrush}" LetterSpacing="0.1" />
                         </Border>
 
                         <!-- Neural processing HUD -->
                         <Border IsVisible="{Binding IsLoading}"
-                                Background="#D906070A"
+                                Background="{DynamicResource CanvasOverlayBrush}"
                                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="18">
                                 <Border Width="76" Height="76" CornerRadius="22"
@@ -550,25 +518,19 @@
                      =========================================== -->
                 <Border Grid.Row="1"
                         Classes="app-panel"
-                        Padding="18,12"
+                        Padding="16,12,16,14"
                         IsVisible="{Binding HasImage}">
-                    <Grid RowDefinitions="Auto, Auto" RowSpacing="12">
+                    <Grid RowDefinitions="Auto, Auto" RowSpacing="10">
 
                         <!-- Inspector header -->
-                        <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto">
-                            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                                <Border Width="32" Height="32" CornerRadius="8"
-                                        Background="{DynamicResource AccentSoftBrush}"
-                                        BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1">
-                                    <Path Classes="icon icon-accent" Data="{StaticResource IconSliders}" Width="15" Height="15" />
-                                </Border>
-                                <StackPanel Spacing="1" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding SelectedEffect}" Classes="h2" FontSize="14" />
-                                    <TextBlock Text="EFFECT PARAMETERS" Classes="h3" FontSize="9.5" Opacity="0.7" />
-                                </StackPanel>
+                        <Grid Grid.Row="0" ColumnDefinitions="*, Auto">
+                            <StackPanel Spacing="2" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding SelectedEffect}" FontSize="15" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                <TextBlock Text="ADJUST PARAMETERS" Classes="h3" FontSize="9.5" Opacity="0.65" />
                             </StackPanel>
 
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                 <Button Command="{Binding ResetEffectCommand}"
                                         Classes="icon-button"
                                         ToolTip.Tip="Reset / undo last apply">
@@ -578,7 +540,7 @@
                                         Classes="action-primary"
                                         IsEnabled="{Binding CanApplyEffects}">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <Path Classes="icon" Data="{StaticResource IconApply}" Width="14" Height="14" Stroke="#062028" />
+                                        <Path Classes="icon" Data="{StaticResource IconApply}" Width="14" Height="14" Stroke="{DynamicResource OnAccentTextBrush}" />
                                         <TextBlock Text="APPLY" FontSize="11" />
                                     </StackPanel>
                                 </Button>
@@ -586,7 +548,11 @@
                         </Grid>
 
                         <!-- Param body -->
-                        <Grid Grid.Row="1">
+                        <ScrollViewer Grid.Row="1"
+                                      Classes="inspector-scroll"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Auto">
+                        <Grid>
 
                             <!-- Color Grading -->
                             <WrapPanel Orientation="Horizontal"
@@ -835,34 +801,47 @@
                                 </Border>
                             </WrapPanel>
                         </Grid>
+                        </ScrollViewer>
                     </Grid>
                 </Border>
             </Grid>
 
             <!-- ====================================================
-                 RIGHT PANEL · MASK LAYERS
+                 RIGHT PANEL · MASKS / HISTORY / SERVER
                  ==================================================== -->
             <Border Grid.Column="2"
                     Classes="app-panel"
                     Width="{Binding IsRightPanelExpanded, Converter={StaticResource BoolToDoubleConverter}, ConverterParameter='320,52'}">
 
-                <Grid RowDefinitions="Auto, *, Auto">
+                <Grid RowDefinitions="Auto, Auto, *, Auto">
 
                     <!-- Expanded header -->
                     <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto"
-                          Margin="14,12,10,10"
+                          Margin="14,12,10,8"
                           IsVisible="{Binding IsRightPanelExpanded}">
                         <StackPanel Spacing="2" VerticalAlignment="Center">
-                            <TextBlock Text="LAYERS" Classes="h3" />
-                            <TextBlock Text="Active masks" Classes="label-strong" FontSize="12" />
+                            <TextBlock Text="{Binding RightPanelHeaderTitle}" Classes="h3" />
+                            <TextBlock Text="{Binding RightPanelSubtitle}" Classes="label-strong" FontSize="12" />
                         </StackPanel>
                         <Border Grid.Column="1"
                                 Background="{DynamicResource AccentSoftBrush}"
                                 BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1"
                                 CornerRadius="999" Padding="9,3" VerticalAlignment="Center"
-                                Margin="0,0,8,0">
+                                Margin="0,0,8,0"
+                                IsVisible="{Binding IsMasksTab}">
                             <TextBlock Text="{Binding MaskItems.Count}" Classes="mono-accent" FontSize="11" />
                         </Border>
+                        <Border Grid.Column="1"
+                                Background="{DynamicResource AccentSoftBrush}"
+                                BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1"
+                                CornerRadius="999" Padding="9,3" VerticalAlignment="Center"
+                                Margin="0,0,8,0"
+                                IsVisible="{Binding IsHistoryTab}">
+                            <TextBlock Text="{Binding History.Count}" Classes="mono-accent" FontSize="11" />
+                        </Border>
+                        <Ellipse Grid.Column="1" Width="8" Height="8" VerticalAlignment="Center" Margin="0,0,10,0"
+                                 Fill="{Binding IsConnected, Converter={StaticResource BoolToColorConverter}, ConverterParameter=status}"
+                                 IsVisible="{Binding IsServerTab}" />
                         <Button Grid.Column="2"
                                 Command="{Binding ToggleRightPanelCommand}"
                                 Classes="icon-button"
@@ -873,87 +852,211 @@
                         </Button>
                     </Grid>
 
+                    <!-- Tab strip -->
+                    <Border Grid.Row="1"
+                            Classes="tool-pill"
+                            Margin="10,0,10,10"
+                            IsVisible="{Binding IsRightPanelExpanded}">
+                        <UniformGrid Columns="3">
+                            <RadioButton Classes="panel-tab" Content="MASKS"
+                                         IsChecked="{Binding RightPanelTabIndex, Converter={StaticResource IntEqualsConverter}, ConverterParameter=0, Mode=TwoWay}" />
+                            <RadioButton Classes="panel-tab" Content="HISTORY"
+                                         IsChecked="{Binding RightPanelTabIndex, Converter={StaticResource IntEqualsConverter}, ConverterParameter=1, Mode=TwoWay}" />
+                            <RadioButton Classes="panel-tab" Content="SERVER"
+                                         IsChecked="{Binding RightPanelTabIndex, Converter={StaticResource IntEqualsConverter}, ConverterParameter=2, Mode=TwoWay}" />
+                        </UniformGrid>
+                    </Border>
+
                     <!-- Collapsed rail header -->
                     <Button Grid.Row="0"
                             Command="{Binding ToggleRightPanelCommand}"
                             Classes="icon-button panel-rail-btn"
                             IsVisible="{Binding IsRightPanelExpanded, Converter={StaticResource InverseBoolConverter}}"
-                            ToolTip.Tip="Expand layers">
+                            ToolTip.Tip="Expand panel">
                         <Path Classes="icon icon-muted" Data="{StaticResource IconChevronLeft}" Width="13" Height="13" />
                     </Button>
 
-                    <!-- Collapsed rail icon stack -->
-                    <Border Grid.Row="1"
-                            IsVisible="{Binding IsRightPanelExpanded, Converter={StaticResource InverseBoolConverter}}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Top"
-                            Margin="0,8,0,0">
-                        <StackPanel Spacing="12" HorizontalAlignment="Center">
-                            <Path Classes="icon icon-accent" Data="{StaticResource IconLayers}" Width="18" Height="18" />
-                            <Border Background="{DynamicResource AccentSoftBrush}"
-                                    BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1"
-                                    CornerRadius="999" Padding="6,2">
-                                <TextBlock Text="{Binding MaskItems.Count}" Classes="mono-accent" FontSize="10" />
-                            </Border>
-                        </StackPanel>
-                    </Border>
+                    <!-- Collapsed rail shortcuts -->
+                    <StackPanel Grid.Row="1"
+                                Spacing="8"
+                                HorizontalAlignment="Center"
+                                Margin="0,4,0,0"
+                                IsVisible="{Binding IsRightPanelExpanded, Converter={StaticResource InverseBoolConverter}}">
+                        <Button Command="{Binding SelectRightPanelTabCommand}" CommandParameter="Masks"
+                                Classes="icon-button" Width="28" Height="28" ToolTip.Tip="Masks">
+                            <Path Classes="icon icon-muted" Data="{StaticResource IconLayers}" Width="14" Height="14" />
+                        </Button>
+                        <Button Command="{Binding SelectRightPanelTabCommand}" CommandParameter="History"
+                                Classes="icon-button" Width="28" Height="28" ToolTip.Tip="History">
+                            <Path Classes="icon icon-muted" Data="{StaticResource IconHistory}" Width="14" Height="14" />
+                        </Button>
+                        <Button Command="{Binding SelectRightPanelTabCommand}" CommandParameter="Server"
+                                Classes="icon-button" Width="28" Height="28" ToolTip.Tip="Server">
+                            <Path Classes="icon icon-muted" Data="{StaticResource IconServer}" Width="14" Height="14" />
+                        </Button>
+                    </StackPanel>
 
-                    <!-- Mask list / empty -->
-                    <Grid Grid.Row="1" IsVisible="{Binding IsRightPanelExpanded}">
+                    <!-- Tab content -->
+                    <Grid Grid.Row="2" IsVisible="{Binding IsRightPanelExpanded}">
 
-                        <!-- Empty state -->
-                        <StackPanel Spacing="12"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Margin="20"
-                                    IsVisible="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}, ConverterParameter='invert'}">
-                            <Border Width="48" Height="48" CornerRadius="14"
-                                    Background="{DynamicResource SurfaceBrush}"
-                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                                <Path Classes="icon icon-tertiary" Data="{StaticResource IconLayers}" Width="22" Height="22" />
-                            </Border>
-                            <TextBlock Text="No masks yet" Classes="h2" HorizontalAlignment="Center" />
-                            <TextBlock Text="Draw a box on the canvas or type a prompt, then press Segment."
-                                       Classes="label"
-                                       MaxWidth="220"
-                                       TextAlignment="Center"
-                                       TextWrapping="Wrap"
-                                       FontSize="11" />
-                        </StackPanel>
+                        <!-- MASKS -->
+                        <Grid IsVisible="{Binding IsMasksTab}">
+                            <StackPanel Spacing="12"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Margin="20"
+                                        IsVisible="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}, ConverterParameter='invert'}">
+                                <Border Width="48" Height="48" CornerRadius="14"
+                                        Background="{DynamicResource SurfaceBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                    <Path Classes="icon icon-tertiary" Data="{StaticResource IconLayers}" Width="22" Height="22" />
+                                </Border>
+                                <TextBlock Text="No masks yet" Classes="h2" HorizontalAlignment="Center" />
+                                <TextBlock Text="Draw a box or enter a prompt, then Segment."
+                                           Classes="label" MaxWidth="220" TextAlignment="Center"
+                                           TextWrapping="Wrap" FontSize="11" />
+                            </StackPanel>
+                            <ScrollViewer Padding="10,2,10,10"
+                                          IsVisible="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}}">
+                                <ListBox ItemsSource="{Binding MaskItems}"
+                                         SelectedIndex="{Binding SelectedMaskIndex}"
+                                         Classes="mask-list">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Classes="mask-card" Padding="12,10">
+                                                <Grid ColumnDefinitions="4, *, Auto" ColumnSpacing="12">
+                                                    <Border Grid.Column="0" Classes="mask-stripe"
+                                                            Background="{Binding Color, Converter={StaticResource ColorToBrushConverter}}" />
+                                                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12.5" />
+                                                        <TextBlock Text="NEURAL SEGMENT" Classes="label" FontSize="9" LetterSpacing="0.1" />
+                                                    </StackPanel>
+                                                    <CheckBox Grid.Column="2" IsChecked="{Binding IsVisible}"
+                                                              VerticalAlignment="Center"
+                                                              ToolTip.Tip="Toggle mask visibility" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </ScrollViewer>
+                        </Grid>
 
-                        <!-- Mask list -->
-                        <ScrollViewer Padding="10,2,10,10"
-                                      IsVisible="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}}">
-                            <ListBox ItemsSource="{Binding MaskItems}"
-                                     SelectedIndex="{Binding SelectedMaskIndex}"
-                                     Classes="mask-list">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Classes="mask-card" Padding="10">
-                                            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
-                                                <!-- Color thumbnail block -->
-                                                <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8"
-                                                        Background="{Binding Color, Converter={StaticResource ColorToBrushConverter}}"
-                                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-                                                        VerticalAlignment="Center" />
-                                                <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12.5" />
-                                                    <TextBlock Text="NEURAL SEGMENT" Classes="label" FontSize="9" LetterSpacing="0.1" />
-                                                </StackPanel>
-                                                <CheckBox Grid.Column="2"
-                                                          IsChecked="{Binding IsVisible}"
-                                                          VerticalAlignment="Center"
-                                                          ToolTip.Tip="Toggle mask visibility" />
-                                            </Grid>
+                        <!-- HISTORY -->
+                        <Grid IsVisible="{Binding IsHistoryTab}">
+                            <StackPanel Spacing="12"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Margin="20"
+                                        IsVisible="{Binding History.Count, Converter={StaticResource CollectionCountToBoolConverter}, ConverterParameter='invert'}">
+                                <Border Width="48" Height="48" CornerRadius="14"
+                                        Background="{DynamicResource SurfaceBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                    <Path Classes="icon icon-tertiary" Data="{StaticResource IconHistory}" Width="22" Height="22" />
+                                </Border>
+                                <TextBlock Text="No history yet" Classes="h2" HorizontalAlignment="Center" />
+                                <TextBlock Text="Applied effects appear here in order."
+                                           Classes="label" MaxWidth="220" TextAlignment="Center"
+                                           TextWrapping="Wrap" FontSize="11" />
+                            </StackPanel>
+                            <ScrollViewer Padding="10,2,10,10"
+                                          IsVisible="{Binding History.Count, Converter={StaticResource CollectionCountToBoolConverter}}">
+                                <ItemsControl ItemsSource="{Binding History}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Classes="mask-card" Padding="12,10" Margin="0,0,0,6">
+                                                <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                                                    <Border Width="28" Height="28" CornerRadius="8"
+                                                            Background="{DynamicResource AccentSoftBrush}"
+                                                            BorderBrush="{DynamicResource AccentMutedBrush}"
+                                                            BorderThickness="1" VerticalAlignment="Center">
+                                                        <Path Classes="icon icon-accent" Data="{StaticResource IconApply}"
+                                                              Width="12" Height="12" />
+                                                    </Border>
+                                                    <StackPanel Spacing="2" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding}" FontWeight="SemiBold" FontSize="12.5" />
+                                                        <TextBlock Text="EFFECT APPLIED" Classes="label" FontSize="9" LetterSpacing="0.1" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+
+                        <!-- SERVER -->
+                        <ScrollViewer IsVisible="{Binding IsServerTab}" Padding="10,0,10,10">
+                            <StackPanel Spacing="14">
+                                <Border Classes="param-cell" Padding="14">
+                                    <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                                        <Border Width="40" Height="40" CornerRadius="10"
+                                                Background="{DynamicResource AccentSoftBrush}"
+                                                BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1">
+                                            <Path Classes="icon icon-accent" Data="{StaticResource IconServer}"
+                                                  Width="18" Height="18" />
                                         </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                                        <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                            <TextBlock Text="SAM3 API" FontWeight="SemiBold" FontSize="13" />
+                                            <TextBlock Text="Segmentation backend" Classes="label" FontSize="10" />
+                                        </StackPanel>
+                                        <Border Grid.Column="2" Classes="status-pill" VerticalAlignment="Center"
+                                                IsVisible="{Binding IsConnected}">
+                                            <TextBlock Text="ONLINE" Classes="label-strong" FontSize="9"
+                                                       Foreground="{DynamicResource SuccessBrush}" />
+                                        </Border>
+                                        <Border Grid.Column="2" Classes="status-pill-muted" VerticalAlignment="Center"
+                                                IsVisible="{Binding IsConnected, Converter={StaticResource InverseBoolConverter}}">
+                                            <TextBlock Text="OFFLINE" Classes="label-strong" FontSize="9" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
+
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="ENDPOINT URL" Classes="h3" FontSize="9.5" Margin="2,0,0,0" />
+                                    <Border Classes="url-input">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <Path Grid.Column="0" Classes="icon icon-tertiary"
+                                                  Data="{StaticResource IconServer}"
+                                                  Width="14" Height="14"
+                                                  Margin="10,0,4,0"
+                                                  VerticalAlignment="Center" />
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding ServerUrl}"
+                                                     PlaceholderText="https://your-server.example"
+                                                     FontSize="12" />
+                                        </Grid>
+                                    </Border>
+                                    <TextBlock Text="Full URL including scheme. Changes apply on connect."
+                                               Classes="label" FontSize="10" TextWrapping="Wrap" Opacity="0.8" />
+                                </StackPanel>
+
+                                <Button Command="{Binding CheckConnectionCommand}"
+                                        Classes="primary"
+                                        HorizontalAlignment="Stretch"
+                                        Height="40"
+                                        IsEnabled="{Binding CanRunConnectionCheck}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Path Classes="icon" Data="{StaticResource IconBolt}" Width="13" Height="13" Stroke="White" />
+                                        <TextBlock Text="{Binding ConnectionButtonText}" FontSize="11" LetterSpacing="0.06" />
+                                    </StackPanel>
+                                </Button>
+
+                                <Border Classes="param-cell" Padding="12,10">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="STATUS" Classes="h3" FontSize="9.5" />
+                                        <TextBlock Text="{Binding StatusMessage}"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{Binding IsConnected, Converter={StaticResource BoolToColorConverter}, ConverterParameter=status}" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
                         </ScrollViewer>
                     </Grid>
 
-                    <!-- Footer: toggle all -->
-                    <Border Grid.Row="2"
+                    <!-- Footer: toggle masks (masks tab only) -->
+                    <Border Grid.Row="3"
                             BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,1,0,0"
                             Padding="12,12"
                             IsVisible="{Binding IsRightPanelExpanded}">
@@ -961,6 +1064,7 @@
                                 Classes="ghost"
                                 HorizontalAlignment="Stretch"
                                 Height="36"
+                                IsVisible="{Binding IsMasksTab}"
                                 IsEnabled="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}}">
                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
                                 <Path Classes="icon icon-muted" Data="{StaticResource IconVisibility}" Width="13" Height="13"
@@ -1010,14 +1114,18 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis"
-                           MaxWidth="640" />
+                           MaxWidth="640"
+                           Foreground="{Binding IsConnected, Converter={StaticResource BoolToColorConverter}, ConverterParameter=status}" />
 
                 <!-- Active effect indicator -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                    <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center"
+                             IsVisible="{Binding HasImage}" />
                     <TextBlock Text="{Binding SelectedEffect}" Classes="footer-text"
-                               Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
-                    <TextBlock Text="·" Classes="footer-text" VerticalAlignment="Center" />
+                               Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"
+                               IsVisible="{Binding HasImage}" />
+                    <TextBlock Text="·" Classes="footer-text" VerticalAlignment="Center"
+                               IsVisible="{Binding HasImage}" />
                     <TextBlock Text="{Binding SelectedTool}" Classes="footer-text" VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>

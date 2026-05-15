@@ -47,18 +47,24 @@
     <SolidColorBrush x:Key="SegmentBrush">#5A8DFF</SolidColorBrush>
     <SolidColorBrush x:Key="SegmentMutedBrush">#1F5A8DFF</SolidColorBrush>
 
+    <!-- Canvas + on-accent foreground -->
+    <SolidColorBrush x:Key="CanvasSurfaceBrush">#06070A</SolidColorBrush>
+    <SolidColorBrush x:Key="CanvasOverlayBrush">#D906070A</SolidColorBrush>
+    <SolidColorBrush x:Key="OnAccentTextBrush">#062028</SolidColorBrush>
+
     <!-- ============================================================
          ICON GEOMETRY — single line, consistent stroke
          ============================================================ -->
     <StreamGeometry x:Key="IconLogo">M12,2 L22,20 L12,16 L2,20 Z</StreamGeometry>
     <StreamGeometry x:Key="IconSegment">M5,5 L19,5 L19,19 L5,19 Z M9,9 L15,9 L15,15 L9,15 Z</StreamGeometry>
     <StreamGeometry x:Key="IconReset">M18,7 A7,7 0 1 0 19,14 M18,7 L18,2 M18,7 L13,7</StreamGeometry>
-    <StreamGeometry x:Key="IconUndo">M9,7 L4,12 L9,17 M5,12 L15,12 A5,5 0 1 1 15,22</StreamGeometry>
+    <StreamGeometry x:Key="IconUndo">M7,7 L3,12 L7,17 M4,12 L14,12 C17,12 19,14 19,17 C19,20 17,22 14,22 C11,22 9,20 9,17</StreamGeometry>
     <StreamGeometry x:Key="IconApply">M4,13 L9,18 L20,6</StreamGeometry>
     <StreamGeometry x:Key="IconExport">M12,3 L12,15 M7,8 L12,3 L17,8 M5,19 L19,19 M5,19 L5,15 M19,19 L19,15</StreamGeometry>
     <StreamGeometry x:Key="IconImport">M12,21 L12,9 M7,16 L12,21 L17,16 M5,5 L19,5 M5,5 L5,9 M19,5 L19,9</StreamGeometry>
-    <StreamGeometry x:Key="IconCompare">M5,5 L13,5 L13,19 L5,19 Z M11,8 L19,8 L19,16 L11,16</StreamGeometry>
+    <StreamGeometry x:Key="IconCompare">M4,5 L11,5 L11,19 L4,19 Z M13,5 L20,5 L20,19 L13,19 Z M11.5,5 L11.5,19</StreamGeometry>
     <StreamGeometry x:Key="IconClose">M6,6 L18,18 M18,6 L6,18</StreamGeometry>
+    <StreamGeometry x:Key="IconClear">M9,3 L15,3 M6,6 L18,6 L17,18 L7,18 Z M10,9 L10,15 M14,9 L14,15</StreamGeometry>
     <StreamGeometry x:Key="IconMask">M12,4 C17,4 21,7 21,12 C21,17 17,20 12,20 C7,20 3,17 3,12 C3,7 7,4 12,4 Z M8,10 L8,10.5 M16,10 L16,10.5 M8,15 C10,17 14,17 16,15</StreamGeometry>
     <StreamGeometry x:Key="IconPalette">M12,3 C7,3 3,6.8 3,11.5 C3,16.2 6.8,20 11.5,20 L13,20 C14,20 14.5,18.8 13.8,18.1 C13.2,17.4 13.6,16 14.8,16 L16.5,16 C19,16 21,14 21,11.5 C21,6.8 17,3 12,3 Z M7.5,10 A1,1 0 1 1 7.5,8 A1,1 0 0 1 7.5,10 M10.5,7.5 A1,1 0 1 1 10.5,5.5 A1,1 0 0 1 10.5,7.5 M15.5,8 A1,1 0 1 1 15.5,6 A1,1 0 0 1 15.5,8</StreamGeometry>
     <StreamGeometry x:Key="IconSpark">M12,2 L14.2,8.2 L20,10 L14.2,11.8 L12,18 L9.8,11.8 L4,10 L9.8,8.2 Z</StreamGeometry>
@@ -66,8 +72,8 @@
     <StreamGeometry x:Key="IconPortrait">M12,12 A4,4 0 1 0 12,4 A4,4 0 0 0 12,12 M4,21 C5,16 19,16 20,21</StreamGeometry>
     <StreamGeometry x:Key="IconHalf">M12,4 A8,8 0 1 0 12,20 A8,8 0 0 0 12,4 M12,4 L12,20</StreamGeometry>
     <StreamGeometry x:Key="IconLayers">M12,3 L21,8 L12,13 L3,8 Z M5,12 L12,16 L19,12 M5,16 L12,20 L19,16</StreamGeometry>
-    <StreamGeometry x:Key="IconVisibility">M2,12 C5,6 19,6 22,12 C19,18 5,18 2,12 Z M12,9 A3,3 0 1 1 12,15 A3,3 0 0 1 12,9</StreamGeometry>
-    <StreamGeometry x:Key="IconVisibilityOff">M3,3 L21,21 M2,12 C4,8 8,6 12,6 C16,6 20,8 22,12 C21,14 19,16 17,17 M9,7 C7,8 5,9 4,12 C5,14 8,16 12,16 C13,16 14,16 15,15</StreamGeometry>
+    <StreamGeometry x:Key="IconVisibility">M3,12 C6,7 18,7 21,12 C18,17 6,17 3,12 Z M12,9.5 A2.5,2.5 0 1 1 12,14.5 A2.5,2.5 0 0 1 12,9.5</StreamGeometry>
+    <StreamGeometry x:Key="IconVisibilityOff">M4,4 L20,20 M4.5,12 C7,8 17,8 19.5,12 C17.5,15 7,15 4.5,12 Z M9,9.5 C10,8.5 14,8.5 15,9.5</StreamGeometry>
     <StreamGeometry x:Key="IconChevronLeft">M15,18 L9,12 L15,6</StreamGeometry>
     <StreamGeometry x:Key="IconChevronRight">M9,18 L15,12 L9,6</StreamGeometry>
     <StreamGeometry x:Key="IconHistory">M12,8 L12,12 L15,15 M21,12 A9,9 0 1 1 12,3 C14.5,3 16.5,4 18,6 L18,2</StreamGeometry>
@@ -142,6 +148,25 @@
     <Setter Property="FontFamily" Value="JetBrains Mono, Cascadia Code, Consolas, ui-monospace, monospace" />
     <Setter Property="FontSize" Value="10.5" />
     <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.section-title">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
+    <Setter Property="LetterSpacing" Value="0.12" />
+    <Setter Property="Margin" Value="6,12,0,8" />
+  </Style>
+
+  <Style Selector="TextBlock.effect-name">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.brand-badge">
+    <Setter Property="FontSize" Value="8" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="LetterSpacing" Value="0.14" />
   </Style>
 
   <!-- ============================================================
@@ -266,25 +291,66 @@
     <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
   </Style>
 
-  <!-- Floating toolbar button — on canvas, slightly more opacity -->
+  <!-- Floating canvas toolbar shell -->
+  <Style Selector="Border.canvas-toolbar">
+    <Setter Property="Background" Value="#F0181C26" />
+    <Setter Property="BorderBrush" Value="#40FFFFFF" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="6" />
+    <Setter Property="BoxShadow" Value="0 10 28 0 #A0000000" />
+  </Style>
+
+  <Style Selector="Border.canvas-toolbar-divider">
+    <Setter Property="Width" Value="1" />
+    <Setter Property="Margin" Value="4,6" />
+    <Setter Property="Background" Value="#28FFFFFF" />
+  </Style>
+
+  <!-- Floating toolbar button — on canvas overlay -->
   <Style Selector="Button.toolbar-btn">
-    <Setter Property="Width" Value="34" />
-    <Setter Property="Height" Value="34" />
+    <Setter Property="Width" Value="40" />
+    <Setter Property="Height" Value="40" />
     <Setter Property="Padding" Value="0" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="VerticalContentAlignment" Value="Center" />
-    <Setter Property="CornerRadius" Value="8" />
-    <Setter Property="Background" Value="#CC1B1E27" />
-    <Setter Property="BorderBrush" Value="#1FFFFFFF" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Background" Value="#D91E2330" />
+    <Setter Property="BorderBrush" Value="#24FFFFFF" />
     <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.15" />
+        <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Button.toolbar-btn /template/ Border#ButtonRoot">
+    <Setter Property="BoxShadow" Value="0 2 10 0 #66000000" />
   </Style>
   <Style Selector="Button.toolbar-btn:pointerover /template/ Border#ButtonRoot">
-    <Setter Property="Background" Value="#E61B1E27" />
-    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+    <Setter Property="Background" Value="#F0282E3C" />
+    <Setter Property="BorderBrush" Value="#55FFFFFF" />
+    <Setter Property="BoxShadow" Value="0 4 14 0 #88000000" />
+  </Style>
+  <Style Selector="Button.toolbar-btn:pressed /template/ Border#ButtonRoot">
+    <Setter Property="Background" Value="#B8161A24" />
+    <Setter Property="BoxShadow" Value="0 1 4 0 #55000000" />
   </Style>
   <Style Selector="Button.toolbar-btn.active /template/ Border#ButtonRoot">
-    <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
-    <Setter Property="BorderBrush" Value="{DynamicResource AccentMutedBrush}" />
+    <Setter Property="Background" Value="#334FD1FF" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="BoxShadow" Value="0 0 16 0 #664FD1FF" />
+  </Style>
+  <Style Selector="Button.toolbar-btn.danger /template/ Border#ButtonRoot">
+    <Setter Property="BorderBrush" Value="#44FF8A8A" />
+  </Style>
+  <Style Selector="Button.toolbar-btn.danger:pointerover /template/ Border#ButtonRoot">
+    <Setter Property="Background" Value="#33FF7B7B" />
+    <Setter Property="BorderBrush" Value="#88FF9B9B" />
+  </Style>
+  <Style Selector="Button.toolbar-btn:disabled">
+    <Setter Property="Opacity" Value="0.35" />
   </Style>
 
   <!-- Primary action used inside the bottom inspector -->
@@ -367,11 +433,77 @@
     <Setter Property="Background" Value="#0AFFFFFF" />
   </Style>
   <Style Selector="RadioButton.tool-btn:checked">
-    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    <Setter Property="Foreground" Value="#062028" />
   </Style>
   <Style Selector="RadioButton.tool-btn:checked /template/ Border">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Border.tool-pill">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="20" />
+    <Setter Property="Padding" Value="3" />
+  </Style>
+
+  <Style Selector="Border.tool-pill RadioButton.tool-btn">
+    <Setter Property="CornerRadius" Value="16" />
+    <Setter Property="Padding" Value="18,7" />
+  </Style>
+
+  <Style Selector="RadioButton.panel-tab">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="LetterSpacing" Value="0.08" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="Center" />
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="RadioButton.panel-tab:pointerover /template/ Border">
+    <Setter Property="Background" Value="#0AFFFFFF" />
+  </Style>
+  <Style Selector="RadioButton.panel-tab:checked">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+  </Style>
+  <Style Selector="RadioButton.panel-tab:checked /template/ Border">
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Border.url-input">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="4,2" />
+  </Style>
+  <Style Selector="Border.url-input:focus-within">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentMutedBrush}" />
+  </Style>
+  <Style Selector="Border.url-input TextBox">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="8,8" />
   </Style>
 
   <!-- Effect card -->
@@ -407,9 +539,14 @@
   <Style Selector="RadioButton.effect-card:pointerover /template/ Border">
     <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
   </Style>
+  <Style Selector="RadioButton.effect-card:checked">
+    <Setter Property="BorderThickness" Value="2,1,1,1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+  </Style>
   <Style Selector="RadioButton.effect-card:checked /template/ Border">
     <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource AccentMutedBrush}" />
+    <Setter Property="BorderThickness" Value="2,1,1,1" />
   </Style>
   <Style Selector="RadioButton.effect-card:checked TextBlock.effect-name">
     <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
@@ -450,6 +587,11 @@
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="Padding" Value="10,7" />
     <Setter Property="FontSize" Value="12" />
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+
+  <Style Selector="ComboBox:focus">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentMutedBrush}" />
   </Style>
 
   <!-- ============================================================
@@ -482,6 +624,18 @@
 
   <Style Selector="ListBox.mask-list ListBoxItem:selected Border.mask-card">
     <Setter Property="BorderBrush" Value="{DynamicResource AccentMutedBrush}" />
+    <Setter Property="Background" Value="#141822" />
+  </Style>
+
+  <Style Selector="ListBox.mask-list ListBoxItem:focus /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Border.mask-stripe">
+    <Setter Property="Width" Value="4" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="Margin" Value="0,2" />
   </Style>
 
   <!-- ============================================================
@@ -538,7 +692,7 @@
     <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
     <Setter Property="BorderThickness" Value="1" />
-    <Setter Property="CornerRadius" Value="14" />
+    <Setter Property="CornerRadius" Value="16" />
     <Setter Property="Transitions">
       <Transitions>
         <DoubleTransition Property="Width" Duration="0:0:0.3" Easing="QuarticEaseOut" />
@@ -586,6 +740,25 @@
       </Transitions>
     </Setter>
   </Style>
+  <Style Selector="Border.composer:focus-within">
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentMutedBrush}" />
+    <Setter Property="BoxShadow" Value="0 0 0 1 #1F4FD1FF" />
+  </Style>
+
+  <Style Selector="Border.flyout-panel">
+    <Setter Property="Background" Value="{DynamicResource PanelElevatedBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="16" />
+    <Setter Property="BoxShadow" Value="0 12 40 0 #66000000" />
+  </Style>
+
+  <Style Selector="Border.top-bar">
+    <Setter Property="Background" Value="#CC0A0B0F" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+  </Style>
 
   <!-- Param cell — used in bottom inspector -->
   <Style Selector="Border.param-cell">
@@ -593,8 +766,12 @@
     <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="CornerRadius" Value="10" />
-    <Setter Property="Padding" Value="12,10" />
-    <Setter Property="MinHeight" Value="72" />
+    <Setter Property="Padding" Value="11,9" />
+    <Setter Property="MinHeight" Value="68" />
+  </Style>
+
+  <Style Selector="ScrollViewer.inspector-scroll">
+    <Setter Property="MaxHeight" Value="252" />
   </Style>
 
   <!-- Status pill -->
@@ -654,6 +831,39 @@
     <Setter Property="Fill" Value="{DynamicResource AccentBrush}" />
     <Setter Property="Stroke" Value="Transparent" />
     <Setter Property="Stretch" Value="Uniform" />
+  </Style>
+
+  <!-- Canvas overlay toolbar — high-contrast strokes -->
+  <Style Selector="Path.icon-toolbar">
+    <Setter Property="Fill" Value="Transparent" />
+    <Setter Property="Stroke" Value="#F0F2FA" />
+    <Setter Property="StrokeThickness" Value="2.1" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="Stretch" Value="Uniform" />
+  </Style>
+
+  <Style Selector="Button.toolbar-btn.active Path.icon-toolbar">
+    <Setter Property="Stroke" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="StrokeThickness" Value="2.2" />
+  </Style>
+
+  <Style Selector="Button.toolbar-btn.danger Path.icon-toolbar">
+    <Setter Property="Stroke" Value="#FFB4B4" />
+  </Style>
+
+  <Style Selector="Button.toolbar-btn:pointerover Path.icon-toolbar">
+    <Setter Property="Stroke" Value="#FFFFFF" />
+  </Style>
+
+  <Style Selector="Button.toolbar-btn:disabled Path.icon-toolbar">
+    <Setter Property="Stroke" Value="#6E7488" />
+  </Style>
+
+  <Style Selector="Border.compare-badge">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Padding" Value="16,6" />
+    <Setter Property="CornerRadius" Value="0,0,10,10" />
+    <Setter Property="BoxShadow" Value="0 6 20 0 #804FD1FF" />
   </Style>
 
 </Styles>

@@ -131,7 +131,28 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _isRightPanelExpanded = true;
 
     [ObservableProperty]
+    private int _rightPanelTabIndex;
+
+    [ObservableProperty]
     private bool _isLeftPanelExpanded = true;
+
+    public bool IsMasksTab => RightPanelTabIndex == 0;
+    public bool IsHistoryTab => RightPanelTabIndex == 1;
+    public bool IsServerTab => RightPanelTabIndex == 2;
+
+    public string RightPanelSubtitle => RightPanelTabIndex switch
+    {
+        1 => History.Count == 0 ? "No operations yet" : $"{History.Count} recent",
+        2 => IsConnected ? "Endpoint reachable" : "Set segmentation API URL",
+        _ => "Active masks"
+    };
+
+    public string RightPanelHeaderTitle => RightPanelTabIndex switch
+    {
+        1 => "HISTORY",
+        2 => "SERVER",
+        _ => "LAYERS"
+    };
 
     public string HideMasksButtonText => AreMasksHidden ? "Show Masks" : "Hide Masks";
     public string ConnectionButtonText => IsCheckingConnection ? "Connecting..." : IsConnected ? "Connected" : "Connect";
@@ -172,23 +193,46 @@ public partial class MainWindowViewModel : ViewModelBase
     // --- Grayscale ---
     [ObservableProperty] private bool _gsIsForeground = true;
 
-    private readonly Stack<Bitmap> _history = new();
+    // Each entry is the ProcessedImage that was active before the corresponding History entry
+    // was applied. null means "no processed image — original was visible".
+    private readonly Stack<Bitmap?> _history = new();
     private readonly Sam3Client _client = new();
+    // Guards Boxes.CollectionChanged from re-entering Segment while one is in flight.
+    private bool _isAutoSegmenting;
 
     public ObservableCollection<string> History { get; } = new();
 
     public MainWindowViewModel()
     {
         _client.BaseUrl = ServerUrl;
+        History.CollectionChanged += (_, _) => NotifyRightPanelTabProperties();
         MaskItems.CollectionChanged += OnMaskItemsCollectionChanged;
-        Boxes.CollectionChanged += async (s, e) =>
-        {
-            OnPropertyChanged(nameof(CanSegment));
-            OnPropertyChanged(nameof(CanRunSegment));
-            OnPropertyChanged(nameof(CanClearWorkspace));
-            await Segment();
-        };
+        Boxes.CollectionChanged += OnBoxesCollectionChanged;
         CanvasMode = SelectedTool == "Bounding Box" ? CanvasMode.BBox : CanvasMode.Select;
+    }
+
+    private async void OnBoxesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(CanSegment));
+        OnPropertyChanged(nameof(CanRunSegment));
+        OnPropertyChanged(nameof(CanClearWorkspace));
+
+        // Skip auto-segment when:
+        //   - another auto-segment is already running (prevents overlapping calls)
+        //   - segmentation isn't currently possible (not connected, loading, no boxes/image)
+        //   - this change came from us clearing the collection
+        if (_isAutoSegmenting || !CanRunSegment || e.Action == NotifyCollectionChangedAction.Reset)
+            return;
+
+        _isAutoSegmenting = true;
+        try
+        {
+            await Segment();
+        }
+        finally
+        {
+            _isAutoSegmenting = false;
+        }
     }
 
     [RelayCommand]
@@ -257,6 +301,30 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(ConnectionButtonText));
         OnPropertyChanged(nameof(CanRunSegment));
+        NotifyRightPanelTabProperties();
+    }
+
+    partial void OnRightPanelTabIndexChanged(int value) => NotifyRightPanelTabProperties();
+
+    private void NotifyRightPanelTabProperties()
+    {
+        OnPropertyChanged(nameof(IsMasksTab));
+        OnPropertyChanged(nameof(IsHistoryTab));
+        OnPropertyChanged(nameof(IsServerTab));
+        OnPropertyChanged(nameof(RightPanelSubtitle));
+        OnPropertyChanged(nameof(RightPanelHeaderTitle));
+    }
+
+    [RelayCommand]
+    private void SelectRightPanelTab(string tab)
+    {
+        RightPanelTabIndex = tab switch
+        {
+            "History" => 1,
+            "Server" => 2,
+            _ => 0
+        };
+        IsRightPanelExpanded = true;
     }
 
     [RelayCommand]
@@ -271,23 +339,38 @@ public partial class MainWindowViewModel : ViewModelBase
             FileTypeFilter = new[] { Avalonia.Platform.Storage.FilePickerFileTypes.ImageAll }
         });
 
-        if (files.Count > 0)
+        if (files.Count == 0) return;
+
+        var path = files[0].Path.LocalPath;
+        Bitmap? loaded;
+        try
         {
-            CurrentImagePath = files[0].Path.LocalPath;
-            CurrentImage = new Bitmap(CurrentImagePath);
-            OnPropertyChanged(nameof(CanSegment));
-            ProcessedImage = null;
-            Boxes.Clear();
-            Masks.Clear();
-            MaskItems.Clear();
-            MaskVisibilityStates.Clear();
-            SelectedMaskIndex = -1;
-            _history.Clear();
-            History.Clear();
-            AreMasksHidden = false;
-            StatusMessage = $"Loaded: {Path.GetFileName(CurrentImagePath)}";
-            RefreshUiState();
+            loaded = new Bitmap(path);
         }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to open '{Path.GetFileName(path)}': {ex.Message}";
+            return;
+        }
+
+        var oldCurrent = CurrentImage;
+        var oldProcessed = ProcessedImage;
+        CurrentImagePath = path;
+        CurrentImage = loaded;
+        ProcessedImage = null;
+        Boxes.Clear();
+        Masks.Clear();
+        MaskItems.Clear();
+        MaskVisibilityStates.Clear();
+        SelectedMaskIndex = -1;
+        ClearHistory();
+        AreMasksHidden = false;
+        StatusMessage = $"Loaded: {Path.GetFileName(path)}";
+        OnPropertyChanged(nameof(CanSegment));
+        RefreshUiState();
+        // Dispose previous bitmaps after the bindings have switched off them.
+        oldCurrent?.Dispose();
+        oldProcessed?.Dispose();
     }
 
     [RelayCommand]
@@ -313,6 +396,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void ClearMasks()
     {
+        var oldProcessed = ProcessedImage;
         Boxes.Clear();
         Masks.Clear();
         MaskItems.Clear();
@@ -320,7 +404,16 @@ public partial class MainWindowViewModel : ViewModelBase
         SelectedMaskIndex = -1;
         AreMasksHidden = false;
         ProcessedImage = null;
+        ClearHistory();
         RefreshUiState();
+        oldProcessed?.Dispose();
+    }
+
+    private void ClearHistory()
+    {
+        while (_history.Count > 0)
+            _history.Pop()?.Dispose();
+        History.Clear();
     }
 
     [RelayCommand]
@@ -383,9 +476,6 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (CurrentImage == null || Masks == null || Masks.Count == 0 || string.IsNullOrEmpty(SelectedEffect)) return;
 
-        if (ProcessedImage != null) _history.Push(ProcessedImage);
-        else _history.Push(CurrentImage);
-
         var targetMaskIndexes = MaskItems
             .Select((item, index) => new { item.IsVisible, Index = index })
             .Where(x => x.IsVisible)
@@ -408,9 +498,10 @@ public partial class MainWindowViewModel : ViewModelBase
                 currentResult = next;
             }
 
-            ProcessedImage = ImageHelper.MatToBitmap(currentResult);
-            if (!History.Contains(SelectedEffect))
-                History.Add(SelectedEffect);
+            var nextProcessed = ImageHelper.MatToBitmap(currentResult);
+            _history.Push(ProcessedImage);
+            ProcessedImage = nextProcessed;
+            History.Add(SelectedEffect);
             RefreshUiState();
         }
         finally
@@ -464,8 +555,8 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void ResetAll()
     {
-        _history.Clear();
-        History.Clear();
+        var oldProcessed = ProcessedImage;
+        ClearHistory();
         ProcessedImage = null;
         Boxes.Clear();
         Masks.Clear();
@@ -476,21 +567,29 @@ public partial class MainWindowViewModel : ViewModelBase
         IsCompareMode = false;
         StatusMessage = "Project fully reset.";
         RefreshUiState();
+        oldProcessed?.Dispose();
     }
 
     [RelayCommand]
     private void UndoEffect()
     {
-        if (_history.Count > 0)
+        if (_history.Count == 0)
         {
-            ProcessedImage = _history.Pop();
-            if (History.Count > 0) History.RemoveAt(History.Count - 1);
-        }
-        else
-        {
+            // Nothing to roll back to — drop any orphaned processed image.
+            var orphan = ProcessedImage;
             ProcessedImage = null;
             History.Clear();
+            orphan?.Dispose();
+            RefreshUiState();
+            return;
         }
+
+        var previous = _history.Pop();
+        var current = ProcessedImage;
+        ProcessedImage = previous;
+        if (History.Count > 0) History.RemoveAt(History.Count - 1);
+        // Dispose only after the binding switches away — the popped bitmap is now live.
+        current?.Dispose();
         RefreshUiState();
     }
 
@@ -506,11 +605,20 @@ public partial class MainWindowViewModel : ViewModelBase
             FileTypeChoices = new[] { Avalonia.Platform.Storage.FilePickerFileTypes.ImagePng }
         });
 
-        if (file != null)
+        if (file == null) return;
+
+        try
         {
-            using var stream = await file.OpenWriteAsync();
+            await using var stream = await file.OpenWriteAsync();
             ProcessedImage.Save(stream);
-            StatusMessage = "Image saved successfully.";
+            StatusMessage = $"Saved to {file.Name}.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Save failed: {ex.Message}";
+        }
+        finally
+        {
             RefreshUiState();
         }
     }
