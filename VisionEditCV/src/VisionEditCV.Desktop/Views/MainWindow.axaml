@@ -1,0 +1,1026 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:VisionEditCV.Desktop.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:VisionEditCV.Desktop.Controls"
+        xmlns:conv="using:VisionEditCV.Desktop.Converters"
+        xmlns:cp="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.ColorPicker"
+        mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
+        x:Class="VisionEditCV.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Classes="main-window"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="VisionEditCV"
+        WindowStartupLocation="CenterScreen"
+        MinWidth="1280" MinHeight="800"
+        Background="{DynamicResource AppBackgroundBrush}"
+        ExtendClientAreaToDecorationsHint="True">
+
+    <Window.Resources>
+        <conv:EnumToBoolConverter x:Key="EnumToBoolConverter" />
+        <conv:BoolToColorConverter x:Key="BoolToColorConverter" />
+        <conv:ColorToBrushConverter x:Key="ColorToBrushConverter" />
+        <conv:CollectionCountToBoolConverter x:Key="CollectionCountToBoolConverter" />
+        <conv:InverseBoolConverter x:Key="InverseBoolConverter" />
+        <conv:BoolToDoubleConverter x:Key="BoolToDoubleConverter" />
+        <conv:BoolToArrowConverter x:Key="BoolToArrowConverter" />
+        <conv:BoolToThicknessConverter x:Key="BoolToThicknessConverter" />
+    </Window.Resources>
+
+    <Grid Background="{DynamicResource AppBackgroundBrush}" RowDefinitions="Auto, *, Auto">
+
+        <!-- ============================================================
+             ZONE 1 · TOP BAR
+             Lean composer-focused header
+             ============================================================ -->
+        <Border Grid.Row="0" Padding="20,22,20,12">
+            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="20">
+
+                <!-- Brand -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <Border Width="34" Height="34" CornerRadius="9"
+                            Background="{DynamicResource AccentSoftBrush}"
+                            BorderBrush="{DynamicResource AccentMutedBrush}"
+                            BorderThickness="1">
+                        <Path Data="{StaticResource IconLogo}" Width="17" Height="17"
+                              Fill="{DynamicResource AccentBrush}" Stretch="Uniform" />
+                    </Border>
+                    <StackPanel Spacing="0" VerticalAlignment="Center">
+                        <TextBlock Text="VisionEdit" Classes="h2" FontSize="14" />
+                        <TextBlock Text="NEURAL IMAGE STUDIO" Classes="label" FontSize="9" Opacity="0.7" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Center: Tool toggle + composer + segment -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+
+                    <!-- Tool mode toggle -->
+                    <Border Background="{DynamicResource PanelElevatedBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                            CornerRadius="10" Padding="3">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Classes="tool-btn" Content="BOX" MinWidth="58"
+                                         IsChecked="{Binding SelectedTool, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Bounding Box'}"
+                                         Command="{Binding SelectToolCommand}" CommandParameter="Bounding Box" />
+                            <RadioButton Classes="tool-btn" Content="TEXT" MinWidth="58"
+                                         IsChecked="{Binding SelectedTool, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Prompt'}"
+                                         Command="{Binding SelectToolCommand}" CommandParameter="Prompt" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Composer -->
+                    <Border Classes="composer" Width="540">
+                        <Grid ColumnDefinitions="Auto, *, Auto" Margin="2">
+                            <Path Grid.Column="0" Classes="icon icon-tertiary" Data="{StaticResource IconSearch}"
+                                  Width="14" Height="14" Margin="14,0,8,0" VerticalAlignment="Center" />
+                            <TextBox Grid.Column="1" Text="{Binding PromptText}"
+                                     PlaceholderText="Describe what to segment, or draw a box on canvas"
+                                     FontSize="13"
+                                     VerticalContentAlignment="Center"
+                                     IsEnabled="{Binding SelectedTool, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Prompt'}" />
+                            <Button Grid.Column="2"
+                                    Command="{Binding SegmentCommand}"
+                                    Classes="accent"
+                                    CornerRadius="8"
+                                    Padding="14,8"
+                                    Margin="0,2,2,2"
+                                    IsEnabled="{Binding CanRunSegment}"
+                                    ToolTip.Tip="Run segmentation">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <Path Classes="icon" Data="{StaticResource IconBolt}" Width="13" Height="13" Stroke="#062028" />
+                                    <TextBlock Text="{Binding SegmentButtonText}" FontSize="11" FontWeight="Bold" LetterSpacing="0.08" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <!-- Right utilities -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+
+                    <!-- Connection pill (single source of truth) -->
+                    <Border Classes="status-pill" VerticalAlignment="Center"
+                            IsVisible="{Binding IsConnected}">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                            <Ellipse Width="6" Height="6" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="ONLINE" Classes="label-strong" FontSize="10"
+                                       Foreground="{DynamicResource SuccessBrush}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="status-pill-muted" VerticalAlignment="Center"
+                            IsVisible="{Binding IsConnected, Converter={StaticResource InverseBoolConverter}}">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                            <Ellipse Width="6" Height="6" Fill="{DynamicResource TextTertiaryBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="OFFLINE" Classes="label-strong" FontSize="10"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <Button Command="{Binding CheckConnectionCommand}"
+                            Classes="ghost"
+                            Padding="12,7"
+                            IsEnabled="{Binding CanRunConnectionCheck}"
+                            FontSize="11">
+                        <TextBlock Text="{Binding ConnectionButtonText}" LetterSpacing="0.05" />
+                    </Button>
+
+                    <Button Classes="icon-button" ToolTip.Tip="Server URL">
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <Border Width="380" Background="{DynamicResource PanelElevatedBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                        CornerRadius="10" Padding="14">
+                                    <StackPanel Spacing="12">
+                                        <TextBlock Text="SAM3 SERVER" Classes="h3" />
+                                        <TextBlock Text="API endpoint used for segmentation requests."
+                                                   Classes="label" FontSize="11" TextWrapping="Wrap" />
+                                        <TextBox Text="{Binding ServerUrl}"
+                                                 PlaceholderText="https://your-server.example"
+                                                 FontSize="12" />
+                                        <Button Command="{Binding CheckConnectionCommand}"
+                                                Classes="primary"
+                                                HorizontalAlignment="Stretch"
+                                                Height="36"
+                                                IsEnabled="{Binding CanRunConnectionCheck}">
+                                            <TextBlock Text="{Binding ConnectionButtonText}" FontSize="11" LetterSpacing="0.05" />
+                                        </Button>
+                                    </StackPanel>
+                                </Border>
+                            </Flyout>
+                        </Button.Flyout>
+                        <Path Classes="icon icon-muted" Data="{StaticResource IconServer}" Width="16" Height="16" />
+                    </Button>
+
+                    <Border Classes="section-divider" Width="1" Height="22" Margin="4,0" />
+
+                    <!-- History flyout -->
+                    <Button Classes="icon-button" ToolTip.Tip="Operation history">
+                        <Button.Flyout>
+                            <Flyout Placement="BottomEdgeAlignedRight">
+                                <Border Width="300" Background="{DynamicResource PanelElevatedBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                        CornerRadius="10" Padding="14">
+                                    <StackPanel Spacing="10">
+                                        <TextBlock Text="OPERATION HISTORY" Classes="h3" />
+                                        <Border Classes="section-divider" />
+                                        <ItemsControl ItemsSource="{Binding History}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Padding="10,7" CornerRadius="8"
+                                                            Background="{DynamicResource SurfaceBrush}" Margin="0,0,0,4">
+                                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                                            <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding}" FontSize="12" VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <StackPanel Spacing="8" Margin="0,8,0,0"
+                                                    HorizontalAlignment="Center"
+                                                    IsVisible="{Binding History.Count, Converter={StaticResource CollectionCountToBoolConverter}, ConverterParameter='invert'}">
+                                            <Path Classes="icon icon-tertiary" Data="{StaticResource IconHistory}"
+                                                  Width="20" Height="20" HorizontalAlignment="Center" />
+                                            <TextBlock Text="No operations yet"
+                                                       Classes="label" HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </Flyout>
+                        </Button.Flyout>
+                        <Path Classes="icon icon-muted" Data="{StaticResource IconHistory}" Width="16" Height="16" />
+                    </Button>
+
+                    <Button Command="{Binding ResetAllCommand}" Classes="icon-button" ToolTip.Tip="Reset entire project">
+                        <Path Classes="icon icon-muted" Data="{StaticResource IconReset}" Width="16" Height="16" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ============================================================
+             ZONE 2 · WORKSPACE
+             Left effects | Canvas + Inspector | Right masks
+             ============================================================ -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto, *, Auto" Margin="20,0,20,4" ColumnSpacing="16">
+
+            <!-- ====================================================
+                 LEFT PANEL · EFFECTS LIBRARY
+                 ==================================================== -->
+            <Border Grid.Column="0"
+                    Classes="app-panel"
+                    Width="{Binding IsLeftPanelExpanded, Converter={StaticResource BoolToDoubleConverter}, ConverterParameter='280,52'}">
+
+                <Grid RowDefinitions="Auto, *, Auto">
+
+                    <!-- Expanded header -->
+                    <Grid Grid.Row="0" ColumnDefinitions="*, Auto"
+                          Margin="14,12,10,10"
+                          IsVisible="{Binding IsLeftPanelExpanded}">
+                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="EFFECTS" Classes="h3" />
+                            <TextBlock Text="{Binding SelectedEffect}" Classes="label-strong" FontSize="12" />
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Command="{Binding ToggleLeftPanelCommand}"
+                                Classes="icon-button"
+                                Width="28" Height="28"
+                                VerticalAlignment="Center"
+                                ToolTip.Tip="Collapse">
+                            <Path Classes="icon icon-muted" Data="{StaticResource IconChevronLeft}" Width="13" Height="13" />
+                        </Button>
+                    </Grid>
+
+                    <!-- Collapsed rail header -->
+                    <Button Grid.Row="0"
+                            Command="{Binding ToggleLeftPanelCommand}"
+                            Classes="icon-button panel-rail-btn"
+                            IsVisible="{Binding IsLeftPanelExpanded, Converter={StaticResource InverseBoolConverter}}"
+                            ToolTip.Tip="Expand effects">
+                        <Path Classes="icon icon-muted" Data="{StaticResource IconChevronRight}" Width="13" Height="13" />
+                    </Button>
+
+                    <!-- Collapsed rail icon -->
+                    <Border Grid.Row="1"
+                            IsVisible="{Binding IsLeftPanelExpanded, Converter={StaticResource InverseBoolConverter}}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top"
+                            Margin="0,8,0,0">
+                        <StackPanel Spacing="14" HorizontalAlignment="Center">
+                            <Path Classes="icon icon-accent" Data="{StaticResource IconSliders}" Width="18" Height="18" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Effect list with category sections -->
+                    <ScrollViewer Grid.Row="1" Padding="10,0,10,8"
+                                  IsVisible="{Binding IsLeftPanelExpanded}"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Spacing="4">
+
+                            <!-- ADJUST -->
+                            <TextBlock Text="ADJUST" Classes="h3" Margin="6,4,0,6" />
+
+                            <RadioButton Classes="effect-card"
+                                         Command="{Binding SelectEffectCommand}" CommandParameter="Color Grading"
+                                         IsChecked="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Color Grading'}">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <Border Width="28" Height="28" CornerRadius="7"
+                                            Background="{DynamicResource SurfaceBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                            VerticalAlignment="Center">
+                                        <Path Classes="icon icon-muted" Data="{StaticResource IconPalette}" Width="14" Height="14" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="11,0,0,0" Spacing="1" VerticalAlignment="Center">
+                                        <TextBlock Classes="effect-name" Text="Color Grading" FontSize="12.5" FontWeight="SemiBold" />
+                                        <TextBlock Text="Tint, brightness, contrast" Classes="label" FontSize="10" Opacity="0.75" />
+                                    </StackPanel>
+                                </Grid>
+                            </RadioButton>
+
+                            <RadioButton Classes="effect-card"
+                                         Command="{Binding SelectEffectCommand}" CommandParameter="Grayscale"
+                                         IsChecked="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Grayscale'}">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <Border Width="28" Height="28" CornerRadius="7"
+                                            Background="{DynamicResource SurfaceBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                            VerticalAlignment="Center">
+                                        <Path Classes="icon icon-muted" Data="{StaticResource IconHalf}" Width="14" Height="14" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="11,0,0,0" Spacing="1" VerticalAlignment="Center">
+                                        <TextBlock Classes="effect-name" Text="Grayscale" FontSize="12.5" FontWeight="SemiBold" />
+                                        <TextBlock Text="Desaturate target region" Classes="label" FontSize="10" Opacity="0.75" />
+                                    </StackPanel>
+                                </Grid>
+                            </RadioButton>
+
+                            <!-- STYLIZE -->
+                            <TextBlock Text="STYLIZE" Classes="h3" Margin="6,16,0,6" />
+
+                            <RadioButton Classes="effect-card"
+                                         Command="{Binding SelectEffectCommand}" CommandParameter="Artistic Style"
+                                         IsChecked="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Artistic Style'}">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <Border Width="28" Height="28" CornerRadius="7"
+                                            Background="{DynamicResource SurfaceBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                            VerticalAlignment="Center">
+                                        <Path Classes="icon icon-muted" Data="{StaticResource IconSpark}" Width="14" Height="14" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="11,0,0,0" Spacing="1" VerticalAlignment="Center">
+                                        <TextBlock Classes="effect-name" Text="Artistic Style" FontSize="12.5" FontWeight="SemiBold" />
+                                        <TextBlock Text="Stylize or pencil render" Classes="label" FontSize="10" Opacity="0.75" />
+                                    </StackPanel>
+                                </Grid>
+                            </RadioButton>
+
+                            <RadioButton Classes="effect-card"
+                                         Command="{Binding SelectEffectCommand}" CommandParameter="Sticker Generation"
+                                         IsChecked="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Sticker Generation'}">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <Border Width="28" Height="28" CornerRadius="7"
+                                            Background="{DynamicResource SurfaceBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                            VerticalAlignment="Center">
+                                        <Path Classes="icon icon-muted" Data="{StaticResource IconImage}" Width="14" Height="14" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="11,0,0,0" Spacing="1" VerticalAlignment="Center">
+                                        <TextBlock Classes="effect-name" Text="Sticker" FontSize="12.5" FontWeight="SemiBold" />
+                                        <TextBlock Text="Border, shadow, background" Classes="label" FontSize="10" Opacity="0.75" />
+                                    </StackPanel>
+                                </Grid>
+                            </RadioButton>
+
+                            <!-- MASK TOOLS -->
+                            <TextBlock Text="MASK TOOLS" Classes="h3" Margin="6,16,0,6" />
+
+                            <RadioButton Classes="effect-card"
+                                         Command="{Binding SelectEffectCommand}" CommandParameter="Pixelation &amp; Blur"
+                                         IsChecked="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Pixelation &amp; Blur'}">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <Border Width="28" Height="28" CornerRadius="7"
+                                            Background="{DynamicResource SurfaceBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                            VerticalAlignment="Center">
+                                        <Path Classes="icon icon-muted" Data="{StaticResource IconBlur}" Width="14" Height="14" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="11,0,0,0" Spacing="1" VerticalAlignment="Center">
+                                        <TextBlock Classes="effect-name" Text="Pixelate / Blur" FontSize="12.5" FontWeight="SemiBold" />
+                                        <TextBlock Text="Targeted privacy edits" Classes="label" FontSize="10" Opacity="0.75" />
+                                    </StackPanel>
+                                </Grid>
+                            </RadioButton>
+
+                            <RadioButton Classes="effect-card"
+                                         Command="{Binding SelectEffectCommand}" CommandParameter="Portrait Effect"
+                                         IsChecked="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Portrait Effect'}">
+                                <Grid ColumnDefinitions="Auto, *">
+                                    <Border Width="28" Height="28" CornerRadius="7"
+                                            Background="{DynamicResource SurfaceBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                            VerticalAlignment="Center">
+                                        <Path Classes="icon icon-muted" Data="{StaticResource IconPortrait}" Width="14" Height="14" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="11,0,0,0" Spacing="1" VerticalAlignment="Center">
+                                        <TextBlock Classes="effect-name" Text="Portrait" FontSize="12.5" FontWeight="SemiBold" />
+                                        <TextBlock Text="Background blur + feather" Classes="label" FontSize="10" Opacity="0.75" />
+                                    </StackPanel>
+                                </Grid>
+                            </RadioButton>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Footer: Import / Export -->
+                    <StackPanel Grid.Row="2" Spacing="6" Margin="12,8,12,14"
+                                IsVisible="{Binding IsLeftPanelExpanded}">
+                        <Button Command="{Binding OpenImageCommand}"
+                                CommandParameter="{Binding $parent[Window]}"
+                                Classes="primary"
+                                HorizontalAlignment="Stretch"
+                                Height="38">
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                <Path Classes="icon" Data="{StaticResource IconImport}" Width="13" Height="13" Stroke="White" />
+                                <TextBlock Text="IMPORT IMAGE" FontSize="11" LetterSpacing="0.08" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding SaveImageCommand}"
+                                CommandParameter="{Binding $parent[Window]}"
+                                Classes="ghost"
+                                HorizontalAlignment="Stretch"
+                                Height="36"
+                                IsEnabled="{Binding CanSaveImage}">
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                <Path Classes="icon icon-muted" Data="{StaticResource IconExport}" Width="13" Height="13" />
+                                <TextBlock Text="EXPORT" FontSize="11" LetterSpacing="0.08" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ====================================================
+                 CENTER · CANVAS + BOTTOM INSPECTOR
+                 ==================================================== -->
+            <Grid Grid.Column="1" RowDefinitions="*, Auto" RowSpacing="12">
+
+                <!-- Canvas -->
+                <Border Grid.Row="0"
+                        Background="#06070A"
+                        CornerRadius="14"
+                        ClipToBounds="True"
+                        BorderBrush="{DynamicResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        BoxShadow="inset 0 0 32 0 #000000B0">
+                    <Panel>
+
+                        <!-- Loading rail at top -->
+                        <ProgressBar VerticalAlignment="Top"
+                                     IsIndeterminate="True"
+                                     IsVisible="{Binding IsLoading}"
+                                     Classes="loading" />
+
+                        <!-- Image canvas -->
+                        <controls:ImageCanvas
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            OriginalImage="{Binding CurrentImage}"
+                            ProcessedImage="{Binding ProcessedImage}"
+                            Mode="{Binding CanvasMode}"
+                            Boxes="{Binding Boxes}"
+                            Masks="{Binding Masks}"
+                            HideMasks="{Binding AreMasksHidden}"
+                            MaskVisibility="{Binding MaskVisibilityStates}"
+                            IsCompareMode="{Binding IsCompareMode}" />
+
+                        <!-- Empty state -->
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20"
+                                    IsVisible="{Binding CurrentImage, Converter={x:Static ObjectConverters.IsNull}}">
+                            <Border Width="86" Height="86" CornerRadius="22"
+                                    Background="{DynamicResource AccentSoftBrush}"
+                                    BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1">
+                                <Path Data="{StaticResource IconImage}" Width="34" Height="34"
+                                      Stroke="{DynamicResource AccentBrush}"
+                                      StrokeThickness="1.6"
+                                      StrokeLineCap="Round"
+                                      Stretch="Uniform"
+                                      Fill="Transparent" />
+                            </Border>
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="No image loaded" Classes="h1" FontSize="18" HorizontalAlignment="Center" />
+                                <TextBlock Text="Import an image to draw boxes, prompt segments, and apply targeted effects."
+                                           Classes="label"
+                                           MaxWidth="380"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           FontSize="11.5" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                                <Button Command="{Binding OpenImageCommand}"
+                                        CommandParameter="{Binding $parent[Window]}"
+                                        Classes="primary">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Path Classes="icon" Data="{StaticResource IconImport}" Width="13" Height="13" Stroke="White" />
+                                        <TextBlock Text="IMPORT IMAGE" FontSize="11" LetterSpacing="0.08" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding CheckConnectionCommand}"
+                                        Classes="ghost"
+                                        IsEnabled="{Binding CanRunConnectionCheck}">
+                                    <TextBlock Text="CHECK SERVER" FontSize="11" LetterSpacing="0.08" />
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Floating canvas toolbar (top-right) -->
+                        <Border VerticalAlignment="Top" HorizontalAlignment="Right"
+                                Margin="0,12,12,0"
+                                Background="#CC0C0F16"
+                                BorderBrush="#1FFFFFFF" BorderThickness="1"
+                                CornerRadius="10" Padding="4"
+                                IsVisible="{Binding HasImage}">
+                            <StackPanel Orientation="Horizontal" Spacing="2">
+                                <Button Command="{Binding ToggleCompareCommand}"
+                                        Classes="toolbar-btn"
+                                        Classes.active="{Binding IsCompareMode}"
+                                        ToolTip.Tip="Compare before/after">
+                                    <Path Classes="icon icon-muted" Data="{StaticResource IconCompare}" Width="14" Height="14" />
+                                </Button>
+                                <Button Command="{Binding ToggleHideMasksCommand}"
+                                        Classes="toolbar-btn"
+                                        IsEnabled="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}}"
+                                        ToolTip.Tip="Toggle mask visibility">
+                                    <Panel>
+                                        <Path Classes="icon icon-muted" Data="{StaticResource IconVisibility}" Width="14" Height="14"
+                                              IsVisible="{Binding AreMasksHidden, Converter={StaticResource InverseBoolConverter}}" />
+                                        <Path Classes="icon icon-muted" Data="{StaticResource IconVisibilityOff}" Width="14" Height="14"
+                                              IsVisible="{Binding AreMasksHidden}" />
+                                    </Panel>
+                                </Button>
+                                <Button Command="{Binding UndoEffectCommand}"
+                                        Classes="toolbar-btn"
+                                        IsEnabled="{Binding CanUndoEffect}"
+                                        ToolTip.Tip="Undo last effect">
+                                    <Path Classes="icon icon-muted" Data="{StaticResource IconUndo}" Width="14" Height="14" />
+                                </Button>
+                                <Border Background="{DynamicResource BorderSubtleBrush}" Width="1" Margin="2,4" />
+                                <Button Command="{Binding ClearMasksCommand}"
+                                        Classes="toolbar-btn"
+                                        IsEnabled="{Binding CanClearWorkspace}"
+                                        ToolTip.Tip="Clear all masks">
+                                    <Path Classes="icon icon-muted" Data="{StaticResource IconClose}" Width="13" Height="13" />
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Compare badge -->
+                        <Border IsVisible="{Binding IsCompareMode}"
+                                VerticalAlignment="Top" HorizontalAlignment="Center"
+                                Background="{DynamicResource AccentBrush}"
+                                Padding="14,5" CornerRadius="0,0,8,8">
+                            <TextBlock Text="ORIGINAL REFERENCE" FontSize="10" FontWeight="Bold"
+                                       Foreground="#062028" LetterSpacing="0.1" />
+                        </Border>
+
+                        <!-- Neural processing HUD -->
+                        <Border IsVisible="{Binding IsLoading}"
+                                Background="#D906070A"
+                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="18">
+                                <Border Width="76" Height="76" CornerRadius="22"
+                                        Background="{DynamicResource AccentSoftBrush}"
+                                        BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
+                                        BoxShadow="0 0 32 0 #404FD1FF">
+                                    <Path Data="{StaticResource IconSpark}" Width="32" Height="32"
+                                          Fill="{DynamicResource AccentBrush}" Stretch="Uniform" />
+                                </Border>
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <TextBlock Text="Processing" Classes="h1" FontSize="16" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Running neural segmentation" Classes="label" HorizontalAlignment="Center" FontSize="11" />
+                                </StackPanel>
+                                <ProgressBar IsIndeterminate="True" Width="180" Classes="loading" />
+                            </StackPanel>
+                        </Border>
+                    </Panel>
+                </Border>
+
+                <!-- ===========================================
+                     BOTTOM INSPECTOR
+                     =========================================== -->
+                <Border Grid.Row="1"
+                        Classes="app-panel"
+                        Padding="18,12"
+                        IsVisible="{Binding HasImage}">
+                    <Grid RowDefinitions="Auto, Auto" RowSpacing="12">
+
+                        <!-- Inspector header -->
+                        <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto">
+                            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                <Border Width="32" Height="32" CornerRadius="8"
+                                        Background="{DynamicResource AccentSoftBrush}"
+                                        BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1">
+                                    <Path Classes="icon icon-accent" Data="{StaticResource IconSliders}" Width="15" Height="15" />
+                                </Border>
+                                <StackPanel Spacing="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SelectedEffect}" Classes="h2" FontSize="14" />
+                                    <TextBlock Text="EFFECT PARAMETERS" Classes="h3" FontSize="9.5" Opacity="0.7" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <Button Command="{Binding ResetEffectCommand}"
+                                        Classes="icon-button"
+                                        ToolTip.Tip="Reset / undo last apply">
+                                    <Path Classes="icon icon-muted" Data="{StaticResource IconReset}" Width="15" Height="15" />
+                                </Button>
+                                <Button Command="{Binding ApplyEffectCommand}"
+                                        Classes="action-primary"
+                                        IsEnabled="{Binding CanApplyEffects}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Path Classes="icon" Data="{StaticResource IconApply}" Width="14" Height="14" Stroke="#062028" />
+                                        <TextBlock Text="APPLY" FontSize="11" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Param body -->
+                        <Grid Grid.Row="1">
+
+                            <!-- Color Grading -->
+                            <WrapPanel Orientation="Horizontal"
+                                       ItemHeight="78"
+                                       IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Color Grading'}">
+                                <Border Classes="param-cell" Width="150" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="TARGET" Classes="h3" FontSize="9.5" />
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <RadioButton Classes="tool-btn" Content="FG" MinWidth="50" IsChecked="{Binding CgIsForeground}" />
+                                            <RadioButton Classes="tool-btn" Content="BG" MinWidth="50" IsChecked="{Binding CgIsForeground, Converter={StaticResource InverseBoolConverter}}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="110" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="TINT" Classes="h3" FontSize="9.5" />
+                                        <cp:ColorPicker Color="{Binding CgTintColor}" HorizontalAlignment="Left" Height="32" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="160" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="TINT MIX" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding CgTintStrength, StringFormat={}{0:P0}}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="0" Maximum="1" Value="{Binding CgTintStrength}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="160" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="BRIGHTNESS" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding CgBrightness}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="-100" Maximum="100" Value="{Binding CgBrightness}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="160" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="CONTRAST" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding CgContrast}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="1" Maximum="30" Value="{Binding CgContrast}" />
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+
+                            <!-- Grayscale -->
+                            <WrapPanel Orientation="Horizontal"
+                                       IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Grayscale'}">
+                                <Border Classes="param-cell" Width="220" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="TARGET" Classes="h3" FontSize="9.5" />
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <RadioButton Classes="tool-btn" Content="FOREGROUND" MinWidth="98" IsChecked="{Binding GsIsForeground}" />
+                                            <RadioButton Classes="tool-btn" Content="BACKGROUND" MinWidth="98" IsChecked="{Binding GsIsForeground, Converter={StaticResource InverseBoolConverter}}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+
+                            <!-- Artistic Style -->
+                            <WrapPanel Orientation="Horizontal"
+                                       IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Artistic Style'}">
+                                <Border Classes="param-cell" Width="180" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="MODE" Classes="h3" FontSize="9.5" />
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <RadioButton Classes="tool-btn" Content="STYLIZE" MinWidth="78" IsChecked="{Binding ArtIsStylize}" />
+                                            <RadioButton Classes="tool-btn" Content="PENCIL" MinWidth="78" IsChecked="{Binding ArtIsStylize, Converter={StaticResource InverseBoolConverter}}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="160" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="SIGMA S" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding ArtSigmaS}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="1" Maximum="200" Value="{Binding ArtSigmaS}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="160" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="SIGMA R" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding ArtSigmaR}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="1" Maximum="100" Value="{Binding ArtSigmaR}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="160" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="SHADE" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding ArtShadeFactor}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="1" Maximum="100" Value="{Binding ArtShadeFactor}" />
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+
+                            <!-- Sticker Generation -->
+                            <WrapPanel Orientation="Horizontal"
+                                       ItemHeight="78"
+                                       IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Sticker Generation'}">
+                                <Border Classes="param-cell" Width="140" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="SCALE" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding StScale}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="1" Maximum="50" Value="{Binding StScale}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="140" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="ROTATION" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding StRotation}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="-180" Maximum="180" Value="{Binding StRotation}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="110" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="BORDER" Classes="h3" FontSize="9.5" />
+                                        <cp:ColorPicker Color="{Binding StBorderColor}" HorizontalAlignment="Left" Height="32" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="140" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="THICKNESS" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding StThickness}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="1" Maximum="30" Value="{Binding StThickness}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="140" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="SHADOW" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding StShadowBlur}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="0" Maximum="100" Value="{Binding StShadowBlur}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" MinWidth="300" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="BACKGROUND" Classes="h3" FontSize="9.5" />
+                                        <Grid ColumnDefinitions="Auto, Auto, Auto, *" ColumnSpacing="8">
+                                            <ComboBox Grid.Column="0"
+                                                      Width="128"
+                                                      Height="32"
+                                                      VerticalAlignment="Center"
+                                                      SelectedIndex="{Binding StBackgroundMode}">
+                                                <ComboBoxItem Content="Original" />
+                                                <ComboBoxItem Content="Solid" />
+                                                <ComboBoxItem Content="Image" />
+                                                <ComboBoxItem Content="Transparent" />
+                                            </ComboBox>
+                                            <cp:ColorPicker Grid.Column="1"
+                                                            Color="{Binding StBackgroundColor}"
+                                                            Height="32"
+                                                            VerticalAlignment="Center"
+                                                            IsVisible="{Binding StShowSolidBackground}" />
+                                            <Button Grid.Column="2"
+                                                    Command="{Binding PickStickerBackgroundCommand}"
+                                                    CommandParameter="{Binding $parent[Window]}"
+                                                    Classes="ghost"
+                                                    Width="36"
+                                                    Height="32"
+                                                    Padding="0"
+                                                    VerticalAlignment="Center"
+                                                    ToolTip.Tip="Upload background image"
+                                                    IsVisible="{Binding StShowImageBackground}">
+                                                <Path Classes="icon icon-muted" Data="{StaticResource IconImport}" Width="13" Height="13" />
+                                            </Button>
+                                            <TextBlock Grid.Column="3"
+                                                       Text="{Binding StickerBackgroundFileName}"
+                                                       Classes="label"
+                                                       FontSize="10"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       IsVisible="{Binding StShowImageBackground}" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+
+                            <!-- Pixelation & Blur -->
+                            <WrapPanel Orientation="Horizontal"
+                                       IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Pixelation &amp; Blur'}">
+                                <Border Classes="param-cell" Width="170" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="MODE" Classes="h3" FontSize="9.5" />
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <RadioButton Classes="tool-btn" Content="PIXELATE" MinWidth="72" IsChecked="{Binding PbIsPixelate}" />
+                                            <RadioButton Classes="tool-btn" Content="BLUR" MinWidth="72" IsChecked="{Binding PbIsPixelate, Converter={StaticResource InverseBoolConverter}}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="150" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="TARGET" Classes="h3" FontSize="9.5" />
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <RadioButton Classes="tool-btn" Content="FG" MinWidth="60" IsChecked="{Binding PbIsForeground}" />
+                                            <RadioButton Classes="tool-btn" Content="BG" MinWidth="60" IsChecked="{Binding PbIsForeground, Converter={StaticResource InverseBoolConverter}}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="200" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="INTENSITY" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding PbIntensity}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="1" Maximum="100" Value="{Binding PbIntensity}" />
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+
+                            <!-- Portrait Effect -->
+                            <WrapPanel Orientation="Horizontal"
+                                       IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Portrait Effect'}">
+                                <Border Classes="param-cell" Width="200" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="BLUR" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding PtBlurStrength}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="3" Maximum="501" Value="{Binding PtBlurStrength}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Classes="param-cell" Width="200" Margin="0,0,8,0">
+                                    <StackPanel Spacing="6">
+                                        <Grid ColumnDefinitions="*, Auto">
+                                            <TextBlock Text="FEATHER" Classes="h3" FontSize="9.5" />
+                                            <TextBlock Grid.Column="1" Text="{Binding PtFeatherAmount}" Classes="mono-accent" />
+                                        </Grid>
+                                        <Slider Minimum="0" Maximum="501" Value="{Binding PtFeatherAmount}" />
+                                    </StackPanel>
+                                </Border>
+                            </WrapPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ====================================================
+                 RIGHT PANEL · MASK LAYERS
+                 ==================================================== -->
+            <Border Grid.Column="2"
+                    Classes="app-panel"
+                    Width="{Binding IsRightPanelExpanded, Converter={StaticResource BoolToDoubleConverter}, ConverterParameter='320,52'}">
+
+                <Grid RowDefinitions="Auto, *, Auto">
+
+                    <!-- Expanded header -->
+                    <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto"
+                          Margin="14,12,10,10"
+                          IsVisible="{Binding IsRightPanelExpanded}">
+                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="LAYERS" Classes="h3" />
+                            <TextBlock Text="Active masks" Classes="label-strong" FontSize="12" />
+                        </StackPanel>
+                        <Border Grid.Column="1"
+                                Background="{DynamicResource AccentSoftBrush}"
+                                BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1"
+                                CornerRadius="999" Padding="9,3" VerticalAlignment="Center"
+                                Margin="0,0,8,0">
+                            <TextBlock Text="{Binding MaskItems.Count}" Classes="mono-accent" FontSize="11" />
+                        </Border>
+                        <Button Grid.Column="2"
+                                Command="{Binding ToggleRightPanelCommand}"
+                                Classes="icon-button"
+                                Width="28" Height="28"
+                                VerticalAlignment="Center"
+                                ToolTip.Tip="Collapse">
+                            <Path Classes="icon icon-muted" Data="{StaticResource IconChevronRight}" Width="13" Height="13" />
+                        </Button>
+                    </Grid>
+
+                    <!-- Collapsed rail header -->
+                    <Button Grid.Row="0"
+                            Command="{Binding ToggleRightPanelCommand}"
+                            Classes="icon-button panel-rail-btn"
+                            IsVisible="{Binding IsRightPanelExpanded, Converter={StaticResource InverseBoolConverter}}"
+                            ToolTip.Tip="Expand layers">
+                        <Path Classes="icon icon-muted" Data="{StaticResource IconChevronLeft}" Width="13" Height="13" />
+                    </Button>
+
+                    <!-- Collapsed rail icon stack -->
+                    <Border Grid.Row="1"
+                            IsVisible="{Binding IsRightPanelExpanded, Converter={StaticResource InverseBoolConverter}}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top"
+                            Margin="0,8,0,0">
+                        <StackPanel Spacing="12" HorizontalAlignment="Center">
+                            <Path Classes="icon icon-accent" Data="{StaticResource IconLayers}" Width="18" Height="18" />
+                            <Border Background="{DynamicResource AccentSoftBrush}"
+                                    BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1"
+                                    CornerRadius="999" Padding="6,2">
+                                <TextBlock Text="{Binding MaskItems.Count}" Classes="mono-accent" FontSize="10" />
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Mask list / empty -->
+                    <Grid Grid.Row="1" IsVisible="{Binding IsRightPanelExpanded}">
+
+                        <!-- Empty state -->
+                        <StackPanel Spacing="12"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Margin="20"
+                                    IsVisible="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}, ConverterParameter='invert'}">
+                            <Border Width="48" Height="48" CornerRadius="14"
+                                    Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                <Path Classes="icon icon-tertiary" Data="{StaticResource IconLayers}" Width="22" Height="22" />
+                            </Border>
+                            <TextBlock Text="No masks yet" Classes="h2" HorizontalAlignment="Center" />
+                            <TextBlock Text="Draw a box on the canvas or type a prompt, then press Segment."
+                                       Classes="label"
+                                       MaxWidth="220"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       FontSize="11" />
+                        </StackPanel>
+
+                        <!-- Mask list -->
+                        <ScrollViewer Padding="10,2,10,10"
+                                      IsVisible="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}}">
+                            <ListBox ItemsSource="{Binding MaskItems}"
+                                     SelectedIndex="{Binding SelectedMaskIndex}"
+                                     Classes="mask-list">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Classes="mask-card" Padding="10">
+                                            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12">
+                                                <!-- Color thumbnail block -->
+                                                <Border Grid.Column="0" Width="32" Height="32" CornerRadius="8"
+                                                        Background="{Binding Color, Converter={StaticResource ColorToBrushConverter}}"
+                                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                                        VerticalAlignment="Center" />
+                                                <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12.5" />
+                                                    <TextBlock Text="NEURAL SEGMENT" Classes="label" FontSize="9" LetterSpacing="0.1" />
+                                                </StackPanel>
+                                                <CheckBox Grid.Column="2"
+                                                          IsChecked="{Binding IsVisible}"
+                                                          VerticalAlignment="Center"
+                                                          ToolTip.Tip="Toggle mask visibility" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- Footer: toggle all -->
+                    <Border Grid.Row="2"
+                            BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,1,0,0"
+                            Padding="12,12"
+                            IsVisible="{Binding IsRightPanelExpanded}">
+                        <Button Command="{Binding ToggleHideMasksCommand}"
+                                Classes="ghost"
+                                HorizontalAlignment="Stretch"
+                                Height="36"
+                                IsEnabled="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}}">
+                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                <Path Classes="icon icon-muted" Data="{StaticResource IconVisibility}" Width="13" Height="13"
+                                      IsVisible="{Binding AreMasksHidden, Converter={StaticResource InverseBoolConverter}}" />
+                                <Path Classes="icon icon-muted" Data="{StaticResource IconVisibilityOff}" Width="13" Height="13"
+                                      IsVisible="{Binding AreMasksHidden}" />
+                                <TextBlock Text="{Binding HideMasksButtonText}" FontSize="11" LetterSpacing="0.05" />
+                            </StackPanel>
+                        </Button>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================
+             ZONE 3 · STATUS FOOTER
+             ============================================================ -->
+        <Border Grid.Row="2"
+                BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,1,0,0"
+                Padding="22,10,22,12">
+            <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="20">
+
+                <!-- File info -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Path Classes="icon icon-tertiary" Data="{StaticResource IconImage}" Width="11" Height="11" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding ImageFileName}" Classes="footer-text" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="·" Classes="footer-text" VerticalAlignment="Center"
+                               IsVisible="{Binding HasImage}" />
+                    <TextBlock Text="{Binding ImageDimensionsText}" Classes="footer-text"
+                               IsVisible="{Binding HasImage}" VerticalAlignment="Center" />
+                    <TextBlock Text="·" Classes="footer-text" VerticalAlignment="Center"
+                               IsVisible="{Binding HasImage}" />
+                    <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasImage}">
+                        <Path Classes="icon icon-tertiary" Data="{StaticResource IconLayers}" Width="11" Height="11" VerticalAlignment="Center" />
+                        <TextBlock Classes="footer-text" VerticalAlignment="Center">
+                            <Run Text="{Binding MaskItems.Count}" /><Run Text=" masks" />
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Status message -->
+                <TextBlock Grid.Column="1"
+                           Text="{Binding StatusMessage}"
+                           Classes="footer-text"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="640" />
+
+                <!-- Active effect indicator -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding SelectedEffect}" Classes="footer-text"
+                               Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                    <TextBlock Text="·" Classes="footer-text" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding SelectedTool}" Classes="footer-text" VerticalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

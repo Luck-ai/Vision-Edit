@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "VisionEdit Refined UI Specs",
+  "entry": "refined-luxury-ui.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-05-15T11:25:40.774Z",
+  "updatedAt": "2026-05-15T11:25:40.787Z",
+  "metadata": {
+    "identifier": "refined-luxury-ui",
+    "artifactType": "text/html",
+    "inferred": false
+  }
+}
