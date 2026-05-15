@@ -1,130 +1,142 @@
 # VisionEditCV
 
-VisionEditCV is a .NET 8 Windows desktop app for AI-assisted image segmentation and region-based image editing.
+VisionEditCV is a cross-platform .NET 8 desktop app for AI-assisted image segmentation and region-based image editing. It runs on Windows, Linux, and macOS with a single Avalonia UI codebase.
 
 It combines:
 - SAM3 API segmentation (bounding boxes or text prompts)
-- Interactive mask selection
-- Real-time effect previews
-- Non-destructive-style editing workflow with apply/reset and before/after comparison
+- Interactive mask selection and toggle
+- Adjustable per-effect parameters
+- Non-destructive workflow with undo and before/after compare
 
 ## Features
 
-- Load images from file dialog or drag-and-drop
+- Open images from the system file picker
 - Segment by:
-	- Bounding box mode
-	- Text prompt mode
-- Select one or more masks to target edits
+  - **Bounding Box** — draw one or more boxes on the canvas
+  - **Prompt** — describe what to segment in natural language
+- Toggle individual masks on/off as effect targets
 - Built-in effects:
-	- Color Grading (tint, brightness, contrast)
-	- Artistic Style (stylize or pencil sketch)
-	- Sticker Generation (outline, shadow, transform, custom background)
-	- Pixelation / Blur
-	- Portrait Effect (background blur with feathering)
-	- Grayscale
-- Live preview while adjusting sliders
-- Save output as PNG or JPEG
+  - Color Grading (tint, brightness, contrast)
+  - Artistic Style (stylize / pencil sketch)
+  - Sticker Generation (border, shadow, transform, custom background)
+  - Pixelation / Blur
+  - Portrait Effect (background blur with feathering)
+  - Grayscale
+- Undo per applied effect, full project reset, compare-with-original
+- Keyboard shortcuts: `Ctrl+O` open, `Ctrl+S` save, `Ctrl+Enter` segment, `Ctrl+Z` undo, `Esc` clear masks
+- Auto-update via Velopack (Windows + Linux + macOS, delta patches)
 
 ## Tech Stack
 
-- .NET 8 WinForms
-- Emgu CV (OpenCV wrapper for C#)
-- Newtonsoft.Json
-- Remote SAM3 REST API
+- **.NET 8** with **Avalonia 12** for the cross-platform UI
+- **Semi.Avalonia** theme + **Inter** font
+- **CommunityToolkit.Mvvm** for view models
+- **Emgu CV** (OpenCV bindings) for image processing — automatically swaps the native runtime per OS (`ubuntu-x64`, `windows`, `macos`)
+- **Velopack** for installer + auto-update
+- Remote **SAM3 REST API** for segmentation
 
-## Prerequisites
+## Install (end users)
 
-1. Windows OS
-2. .NET SDK 8.0+
-3. Internet access to reach the segmentation server
+Prebuilt installers are published to [GitHub Releases](https://github.com/Luck-ai/Vision-Edit/releases).
 
-Check your .NET version:
+| Platform | Download | Run |
+|---|---|---|
+| Windows | `VisionEditCV-win-Setup.exe` | Double-click — installs to `%LocalAppData%`, creates Start Menu + Desktop shortcuts |
+| Linux | `VisionEditCV.AppImage` | `chmod +x VisionEditCV.AppImage && ./VisionEditCV.AppImage` |
+| macOS | `VisionEditCV-osx.pkg` | Double-click |
 
-```bash
-dotnet --version
-```
+Once installed the app checks for updates 3 seconds after launch and again when you click **Check for Updates** in the *Server* tab. Updates download as small delta patches and apply on the next restart.
 
-## Getting Started
+## Build from source
 
-1. Clone the repository.
-2. Open the solution in Visual Studio, or run from terminal.
+### Prerequisites
 
-## Install from Setup Folder (Prebuilt App)
+- [.NET SDK 8.0+](https://dotnet.microsoft.com/download)
+- A C# IDE (Rider, Visual Studio, or VS Code with the C# Dev Kit) — optional
 
-If you want to install and run the app without building source code, use the files in `Setup/`.
-
-### Option 1: Use setup.exe (recommended)
-
-1. Open `Setup/`.
-2. Double-click `setup.exe`.
-3. Follow the installation wizard prompts.
-4. Launch VisionEditCV from Start Menu (or desktop shortcut if created).
-
-### Option 2: Use ClickOnce manifest directly
-
-1. Open `Setup/`.
-2. Double-click `VisionEditCV.application`.
-3. Accept the install/run prompt.
-
-Notes:
-- Windows may show a security prompt for downloaded files; choose to trust/publish only if the source is trusted.
-- If required by your machine, install the .NET Desktop Runtime 8 first.
-
-## Run with Visual Studio
-
-1. Open `VisionEditCV.sln`.
-2. Set `VisionEditCV.Desktop` as startup project (if needed).
-3. Press `F5`.
-
-### Run from Terminal
+### Run in development
 
 ```bash
-cd VisionEditCV
-dotnet restore
-dotnet run
+git clone https://github.com/Luck-ai/Vision-Edit
+cd Vision-Edit/VisionEditCV
+dotnet run --project src/VisionEditCV.Desktop
 ```
+
+Auto-update is disabled in dev builds (the update panel shows *"running from a non-installed build"*).
+
+### Package a release
+
+The repo ships two scripts that wrap `dotnet publish` + Velopack's `vpk pack`:
+
+```bash
+# Linux / macOS host:
+./publish.sh 1.0.0 linux-x64         # → releases/linux-x64/VisionEditCV.AppImage
+./publish.sh 1.0.0 osx-arm64         # → releases/osx-arm64/...
+
+# Windows host (PowerShell):
+./publish.ps1 -Version 1.0.0          # → releases/win-x64/VisionEditCV-win-Setup.exe
+```
+
+Each run produces an installer plus a full + delta nupkg consumed by the auto-updater.
+
+> **Note:** Velopack's Windows installer can only be built *from* Windows; the bash script handles `linux-x64` / `osx-*` and the PowerShell script handles `win-x64`.
+
+### Publish a new version to GitHub Releases
+
+Get a [GitHub Personal Access Token](https://github.com/settings/tokens?type=beta) with `Contents: write` for the repo, then:
+
+```bash
+export GITHUB_TOKEN=github_pat_xxx
+./publish.sh 1.0.1 linux-x64 --publish
+./publish.ps1 -Version 1.0.1 -PublishGithub    # on Windows
+```
+
+The script tags the commit `v<version>` and uploads the installer + update manifest. The next launch of any installed copy will detect the new version, download the delta, and prompt the user to **Restart & Install**.
 
 ## How to Use
 
-1. Start the app and load an image.
-2. Ensure server status is connected.
-3. Choose segmentation mode:
-	 - `BBox`: draw one or more boxes.
-	 - `Prompt`: type a text prompt.
-4. Click `Segment`.
-5. Select masks in the right panel.
-6. Choose an effect and adjust parameters.
-7. Click `Apply` to commit, or `Reset` to discard current effect adjustments.
-8. Use `Show Before` to compare with the original image.
-9. Save the final result.
+1. Start the app. The **Server** tab shows your SAM3 endpoint — click **Connect** to verify it's reachable.
+2. **Import Image** (or `Ctrl+O`).
+3. Pick a tool in the top bar:
+   - **BOX** — drag one or more boxes on the canvas
+   - **TEXT** — type a prompt in the composer
+4. Click **Segment** (or `Ctrl+Enter`). Masks appear in the right panel.
+5. Toggle which masks are active and select an **effect** in the left panel.
+6. Adjust the parameter sliders in the bottom inspector. Click **Apply**.
+7. Stack more effects, **Undo** with `Ctrl+Z`, or **Compare** to flash the original.
+8. **Export** (or `Ctrl+S`) to save the result.
 
 ## Server Configuration
 
-- The app uses a default SAM3 server URL on startup.
-- If the server is cold-starting, initial connection can take around 5-6 minutes, a successful connection will show "Connected" status.
+- The default SAM3 endpoint is set on first launch — change it in the **Server** tab and click **Connect**.
+- A cold-starting server may take 5–6 minutes to wake; the status pill shows progress.
 
 ## Project Structure
 
 ```text
-VisionEditCV/
-	Api/
-		Sam3Client.cs          # SAM3 HTTP client
-	Controls/                # Custom WinForms controls
-	Models/
-		SegmentationResult.cs
-	Processing/
-		ImageEffects.cs        # Effect implementations
-	MainForm.cs              # Main UI and app workflow
-	Program.cs               # Application entry point
+VisionEditCV/                          # repo root
+├── README.md
+├── VisionEditCV.sln
+└── VisionEditCV/                      # main project folder
+    ├── publish.sh / publish.ps1       # Velopack build + upload scripts
+    └── src/
+        ├── VisionEditCV.Core/         # API client, models, image effects
+        │   ├── Api/Sam3Client.cs
+        │   ├── Models/
+        │   └── Processing/ImageEffects.cs
+        ├── VisionEditCV.Desktop/      # Avalonia UI (current)
+        │   ├── Views/MainWindow.axaml
+        │   ├── ViewModels/MainWindowViewModel.cs
+        │   ├── Styles/AppStyles.axaml
+        │   ├── Controls/ImageCanvas.cs
+        │   ├── Converters/
+        │   └── Program.cs
+        └── VisionEditCV.WinForms/     # legacy Windows-only UI (deprecated)
 ```
 
 ## Troubleshooting
 
-- App does not start:
-	- Verify .NET 8 SDK is installed.
-- Segmentation fails or times out:
-	- Check internet connection.
-	- Verify server is connected by clicking the status button.
-	- Retry after waiting for server warm-up.
-- No masks returned:
-	- Try a different prompt or adjust bounding boxes.
+- **App won't start** — verify .NET 8 runtime is installed (`dotnet --info`). Self-contained installers bundle the runtime so this only matters for `dotnet run` from source.
+- **Segmentation hangs or fails** — check the **Server** tab status. The server may be cold-starting; retry after a minute. Verify network access.
+- **"Auto-update disabled" in Server tab** — expected in dev builds (`dotnet run`). Auto-update only activates in installed copies from the installer or AppImage.
+- **NETSDK1206 warning during build** — harmless. The Emgu native runtime package is still named with the legacy `ubuntu-x64` RID; everything works at runtime.

@@ -1051,6 +1051,43 @@
                                                    Foreground="{Binding IsConnected, Converter={StaticResource BoolToColorConverter}, ConverterParameter=status}" />
                                     </StackPanel>
                                 </Border>
+
+                                <!-- Auto-update card -->
+                                <Border Classes="param-cell" Padding="14">
+                                    <StackPanel Spacing="10">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <Border Width="32" Height="32" CornerRadius="9"
+                                                    Background="{DynamicResource AccentSoftBrush}"
+                                                    BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1"
+                                                    VerticalAlignment="Center">
+                                                <Path Classes="icon icon-accent" Data="{StaticResource IconImport}" Width="14" Height="14" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="2" VerticalAlignment="Center">
+                                                <TextBlock Text="APP UPDATES" Classes="h3" FontSize="9.5" />
+                                                <TextBlock Text="{Binding UpdateStatus}" FontSize="11"
+                                                           TextWrapping="Wrap"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Command="{Binding CheckForUpdatesCommand}"
+                                                    Classes="ghost"
+                                                    IsEnabled="{Binding CanCheckForUpdate}"
+                                                    Padding="12,8"
+                                                    FontSize="11">
+                                                <TextBlock Text="CHECK FOR UPDATES" LetterSpacing="0.05" />
+                                            </Button>
+                                            <Button Command="{Binding ApplyUpdateCommand}"
+                                                    Classes="primary"
+                                                    IsEnabled="{Binding CanInstallUpdate}"
+                                                    IsVisible="{Binding IsUpdateAvailable}"
+                                                    Padding="12,8"
+                                                    FontSize="11">
+                                                <TextBlock Text="RESTART &amp; INSTALL" LetterSpacing="0.05" />
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
                         </ScrollViewer>
                     </Grid>

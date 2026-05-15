@@ -19,6 +19,8 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Avalonia.Media;
+using Velopack;
+using Velopack.Sources;
 
 namespace VisionEditCV.Desktop.ViewModels;
 
@@ -200,6 +202,29 @@ public partial class MainWindowViewModel : ViewModelBase
     // Guards Boxes.CollectionChanged from re-entering Segment while one is in flight.
     private bool _isAutoSegmenting;
 
+    // --- Auto-update (Velopack) ---
+    private const string UpdateRepoUrl = "https://github.com/Luck-ai/Vision-Edit";
+    private readonly UpdateManager? _updateManager;
+    private UpdateInfo? _pendingUpdate;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanInstallUpdate))]
+    [NotifyPropertyChangedFor(nameof(CanCheckForUpdate))]
+    private bool _isUpdateBusy;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanInstallUpdate))]
+    private bool _isUpdateAvailable;
+
+    [ObservableProperty]
+    private string _updateStatus = "";
+
+    [ObservableProperty]
+    private string? _availableVersion;
+
+    public bool CanCheckForUpdate => _updateManager?.IsInstalled == true && !IsUpdateBusy;
+    public bool CanInstallUpdate => IsUpdateAvailable && !IsUpdateBusy;
+
     public ObservableCollection<string> History { get; } = new();
 
     public MainWindowViewModel()
@@ -209,6 +234,83 @@ public partial class MainWindowViewModel : ViewModelBase
         MaskItems.CollectionChanged += OnMaskItemsCollectionChanged;
         Boxes.CollectionChanged += OnBoxesCollectionChanged;
         CanvasMode = SelectedTool == "Bounding Box" ? CanvasMode.BBox : CanvasMode.Select;
+
+        try
+        {
+            _updateManager = new UpdateManager(new GithubSource(UpdateRepoUrl, accessToken: null, prerelease: false));
+        }
+        catch
+        {
+            _updateManager = null;
+        }
+
+        UpdateStatus = _updateManager?.IsInstalled == true
+            ? "Up to date"
+            : "Auto-update disabled (running from a non-installed build)";
+
+        if (_updateManager?.IsInstalled == true)
+            _ = CheckForUpdatesOnStartupAsync();
+    }
+
+    private async Task CheckForUpdatesOnStartupAsync()
+    {
+        // Let the UI settle before doing background network work.
+        await Task.Delay(TimeSpan.FromSeconds(3));
+        await RunUpdateCheckAsync(silent: true);
+    }
+
+    [RelayCommand]
+    private Task CheckForUpdates() => RunUpdateCheckAsync(silent: false);
+
+    private async Task RunUpdateCheckAsync(bool silent)
+    {
+        if (_updateManager is null || !_updateManager.IsInstalled || IsUpdateBusy) return;
+
+        IsUpdateBusy = true;
+        if (!silent) UpdateStatus = "Checking for updates…";
+        try
+        {
+            _pendingUpdate = await _updateManager.CheckForUpdatesAsync();
+            if (_pendingUpdate is null)
+            {
+                IsUpdateAvailable = false;
+                AvailableVersion = null;
+                UpdateStatus = "Up to date";
+                return;
+            }
+
+            var version = _pendingUpdate.TargetFullRelease.Version.ToString();
+            UpdateStatus = $"Downloading {version}…";
+            await _updateManager.DownloadUpdatesAsync(_pendingUpdate);
+            AvailableVersion = version;
+            IsUpdateAvailable = true;
+            UpdateStatus = $"Update {version} ready — restart to install";
+        }
+        catch (Exception ex) when (silent)
+        {
+            // Stay quiet on startup — most likely the user is offline or no release exists yet.
+            UpdateStatus = "Up to date";
+            _pendingUpdate = null;
+            IsUpdateAvailable = false;
+            _ = ex;
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus = $"Update check failed: {ex.Message}";
+            _pendingUpdate = null;
+            IsUpdateAvailable = false;
+        }
+        finally
+        {
+            IsUpdateBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ApplyUpdate()
+    {
+        if (_updateManager is null || _pendingUpdate is null) return;
+        _updateManager.ApplyUpdatesAndRestart(_pendingUpdate);
     }
 
     private async void OnBoxesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
