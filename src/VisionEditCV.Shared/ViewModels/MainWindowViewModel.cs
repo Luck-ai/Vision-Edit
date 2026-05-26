@@ -11,9 +11,9 @@ using CommunityToolkit.Mvvm.Input;
 using Avalonia.Media.Imaging;
 using VisionEditCV.Api;
 using VisionEditCV.Models;
-using VisionEditCV.Desktop.Models;
-using VisionEditCV.Desktop.Controls;
-using VisionEditCV.Desktop.Helpers;
+using VisionEditCV.Shared.Models;
+using VisionEditCV.Shared.Controls;
+using VisionEditCV.Shared.Helpers;
 using VisionEditCV.Processing;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
@@ -22,7 +22,7 @@ using Avalonia.Media;
 using Velopack;
 using Velopack.Sources;
 
-namespace VisionEditCV.Desktop.ViewModels;
+namespace VisionEditCV.Shared.ViewModels;
 
 public partial class MaskItemViewModel : ObservableObject
 {

@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace VisionEditCV.Desktop.ViewModels;
+namespace VisionEditCV.Shared.ViewModels;
 
 public abstract class ViewModelBase : ObservableObject
 {

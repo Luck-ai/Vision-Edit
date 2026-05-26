@@ -3,7 +3,7 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Data.Converters;
 
-namespace VisionEditCV.Desktop.Converters;
+namespace VisionEditCV.Shared.Converters;
 
 public class EnumToBoolConverter : IValueConverter
 {

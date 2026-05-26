@@ -3,7 +3,7 @@ using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 
-namespace VisionEditCV.Desktop.Converters;
+namespace VisionEditCV.Shared.Converters;
 
 public class ColorToBrushConverter : IValueConverter
 {

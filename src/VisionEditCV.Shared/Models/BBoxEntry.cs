@@ -1,6 +1,6 @@
 using Avalonia;
 
-namespace VisionEditCV.Desktop.Models;
+namespace VisionEditCV.Shared.Models;
 
 public class BBoxEntry
 {

@@ -6,7 +6,7 @@ using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 
-namespace VisionEditCV.Desktop.Helpers;
+namespace VisionEditCV.Shared.Helpers;
 
 public static class ImageHelper
 {

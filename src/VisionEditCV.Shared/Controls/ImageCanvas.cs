@@ -9,11 +9,11 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using SkiaSharp;
-using VisionEditCV.Desktop.Models;
+using VisionEditCV.Shared.Models;
 using Avalonia.Skia;
 using Avalonia.Rendering.SceneGraph;
 
-namespace VisionEditCV.Desktop.Controls;
+namespace VisionEditCV.Shared.Controls;
 
 public enum CanvasMode { Select, BBox, Pan }
 
