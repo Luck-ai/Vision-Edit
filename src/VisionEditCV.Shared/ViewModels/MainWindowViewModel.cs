@@ -626,9 +626,11 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task OpenImage(object? window)
     {
-        if (window is not Avalonia.Controls.Window w) return;
+        if (window is not Avalonia.Visual visual) return;
+        var topLevel = Avalonia.Controls.TopLevel.GetTopLevel(visual);
+        if (topLevel == null) return;
 
-        var files = await w.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
         {
             Title = "Open Image",
             AllowMultiple = false,
@@ -637,7 +639,17 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (files.Count == 0) return;
 
-        var path = files[0].Path.LocalPath;
+        string path;
+        try
+        {
+            path = await VisionEditCV.Desktop.Helpers.AndroidFileHelper.EnsureLocalFilePathAsync(files[0]);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to get local path: {ex.Message}";
+            return;
+        }
+
         Bitmap? loaded;
         try
         {
@@ -687,9 +699,11 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task PickStickerBackground(object? window)
     {
-        if (window is not Avalonia.Controls.Window w) return;
+        if (window is not Avalonia.Visual visual) return;
+        var topLevel = Avalonia.Controls.TopLevel.GetTopLevel(visual);
+        if (topLevel == null) return;
 
-        var files = await w.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
+        var files = await topLevel.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
         {
             Title = "Open Sticker Background",
             AllowMultiple = false,
@@ -698,7 +712,18 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (files.Count > 0)
         {
-            StBackgroundImagePath = files[0].Path.LocalPath;
+            string path;
+            try
+            {
+                path = await VisionEditCV.Desktop.Helpers.AndroidFileHelper.EnsureLocalFilePathAsync(files[0]);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Failed to get local path: {ex.Message}";
+                return;
+            }
+
+            StBackgroundImagePath = path;
             StBackgroundMode = 2;
             StatusMessage = $"Sticker background: {Path.GetFileName(StBackgroundImagePath)}";
         }
@@ -921,9 +946,11 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task SaveImage(object? window)
     {
-        if (ProcessedImage == null || window is not Avalonia.Controls.Window w) return;
+        if (ProcessedImage == null || window is not Avalonia.Visual visual) return;
+        var topLevel = Avalonia.Controls.TopLevel.GetTopLevel(visual);
+        if (topLevel == null) return;
 
-        var file = await w.StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        var file = await topLevel.StorageProvider.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
         {
             Title = "Save Image",
             DefaultExtension = ".png",

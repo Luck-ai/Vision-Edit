@@ -366,7 +366,7 @@
                     <!-- Collapsed footer: icon-only Open New Image -->
                     <Button Grid.Row="2"
                             Command="{Binding OpenImageCommand}"
-                            CommandParameter="{Binding $parent[Window]}"
+                            CommandParameter="{Binding $self}"
                             Classes="icon-button panel-rail-btn"
                             Margin="0,4,0,12"
                             ToolTip.Tip="Open new image (Ctrl+O)"
@@ -378,7 +378,7 @@
                     <StackPanel Grid.Row="2" Spacing="6" Margin="12,8,12,14"
                                 IsVisible="{Binding IsLeftPanelExpanded}">
                         <Button Command="{Binding OpenImageCommand}"
-                                CommandParameter="{Binding $parent[Window]}"
+                                CommandParameter="{Binding $self}"
                                 Classes="primary"
                                 HorizontalAlignment="Stretch"
                                 Height="40">
@@ -390,7 +390,7 @@
                             </Grid>
                         </Button>
                         <Button Command="{Binding SaveImageCommand}"
-                                CommandParameter="{Binding $parent[Window]}"
+                                CommandParameter="{Binding $self}"
                                 Classes="ghost"
                                 HorizontalAlignment="Stretch"
                                 Height="40"
@@ -468,7 +468,7 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
                             <Button Command="{Binding OpenImageCommand}"
-                                    CommandParameter="{Binding $parent[Window]}"
+                                    CommandParameter="{Binding $self}"
                                     Classes="primary">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <Path Classes="icon" Data="{StaticResource IconImport}" Width="13" Height="13" Stroke="White" />
@@ -946,7 +946,7 @@
                                                               IsVisible="{Binding StShowImageBackground}">
                                                             <Button Grid.Column="0"
                                                                     Command="{Binding PickStickerBackgroundCommand}"
-                                                                    CommandParameter="{Binding $parent[Window]}"
+                                                                    CommandParameter="{Binding $self}"
                                                                     Classes="ghost" Height="30" Padding="12,0">
                                                                 <Path Classes="icon icon-muted" Data="{StaticResource IconImport}" Width="12" Height="12" />
                                                             </Button>
