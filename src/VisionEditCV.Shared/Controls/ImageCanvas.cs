@@ -179,6 +179,19 @@ public class ImageCanvas : Control
     private Point _drawStart;
     private Rect _boxAtMoveStart;
 
+    private readonly Dictionary<long, Point> _activePointers = new();
+    private bool _isPinching;
+    private double _initialPinchDistance;
+    private double _initialZoom;
+    private Point _initialMidpoint;
+    private Point _initialPanOffset;
+    private bool _gestureStartedAsSingleFinger;
+
+    private DateTime _lastTapTime = DateTime.MinValue;
+    private Point _lastTapPosition;
+    private const double DoubleTapTimeThresholdMs = 300;
+    private const double DoubleTapDistanceThreshold = 20;
+
     private const double HandleSize = 8.0;
 
     public ImageCanvas()
@@ -204,10 +217,6 @@ public class ImageCanvas : Control
         var imgSize = OriginalImage.Size;
         var baseScale = Math.Min(canvasSize.Width / imgSize.Width, canvasSize.Height / imgSize.Height);
         
-        // P_screen = (canvasSize - imgSize * baseScale * zoom) / 2 + panOffset + P_img * baseScale * zoom
-        // Solving for pan2 to keep P_screen constant:
-        // pan2 = pan1 + (imgSize * baseScale * (z2 - z1)) / 2 + (P_screen - Center1 - pan1) * (1 - z2/z1)
-        
         var oldCenter = new Point((canvasSize.Width - imgSize.Width * baseScale * oldZoom) / 2,
                                   (canvasSize.Height - imgSize.Height * baseScale * oldZoom) / 2);
         
@@ -223,8 +232,80 @@ public class ImageCanvas : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        var pointerId = e.Pointer.Id;
         var pos = e.GetPosition(this);
+        _activePointers[pointerId] = pos;
+
+        // If two fingers are active, we initialize/update pinch-to-zoom
+        if (_activePointers.Count == 2)
+        {
+            _gestureStartedAsSingleFinger = false;
+            
+            // Abort single-finger drawing if we were drawing
+            if (_isDrawing && _selectedBoxIndex != -1 && _selectedBoxIndex < Boxes.Count)
+            {
+                Boxes.RemoveAt(_selectedBoxIndex);
+                _selectedBoxIndex = -1;
+            }
+            _isDrawing = false;
+            _isPanning = false;
+            _isMoving = false;
+            _dragHandle = -1;
+
+            Point p1 = default;
+            Point p2 = default;
+            int index = 0;
+            foreach (var kvp in _activePointers)
+            {
+                if (index == 0) p1 = kvp.Value;
+                else if (index == 1) { p2 = kvp.Value; break; }
+                index++;
+            }
+
+            _initialPinchDistance = Math.Sqrt(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.Y - p2.Y, 2));
+            _initialZoom = _zoom;
+            _initialMidpoint = new Point((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2);
+            _initialPanOffset = _panOffset;
+            _isPinching = true;
+
+            e.Pointer.Capture(this);
+            InvalidateVisual();
+            return;
+        }
+        else if (_activePointers.Count > 2)
+        {
+            // Ignore extra fingers, but keep pinching
+            _gestureStartedAsSingleFinger = false;
+            e.Pointer.Capture(this);
+            return;
+        }
+
+        // Single-finger path
+        _gestureStartedAsSingleFinger = true;
+        
         var properties = e.GetCurrentPoint(this).Properties;
+
+        // Double tap check to toggle box label (foreground/background)
+        var now = DateTime.UtcNow;
+        var timeDiff = (now - _lastTapTime).TotalMilliseconds;
+        var distDiff = Math.Sqrt(Math.Pow(pos.X - _lastTapPosition.X, 2) + Math.Pow(pos.Y - _lastTapPosition.Y, 2));
+        if (timeDiff < DoubleTapTimeThresholdMs && distDiff < DoubleTapDistanceThreshold)
+        {
+            if (OriginalImage != null)
+            {
+                var doubleTapImgRect = GetImageRect();
+                var hitIndex = HitTestBox(pos, doubleTapImgRect);
+                if (hitIndex != -1)
+                {
+                    Boxes[hitIndex].Label = !Boxes[hitIndex].Label;
+                    InvalidateVisual();
+                }
+            }
+            _lastTapTime = DateTime.MinValue; // Reset
+            return;
+        }
+        _lastTapTime = now;
+        _lastTapPosition = pos;
 
         if (properties.IsMiddleButtonPressed || (Mode == CanvasMode.Pan && properties.IsLeftButtonPressed))
         {
@@ -283,72 +364,169 @@ public class ImageCanvas : Control
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
+        var pointerId = e.Pointer.Id;
         var pos = e.GetPosition(this);
 
-        if (_isPanning)
+        // Update active pointer position if we track it
+        if (_activePointers.ContainsKey(pointerId))
         {
-            var delta = pos - _lastMousePos;
-            _panOffset += delta;
-            _lastMousePos = pos;
-            InvalidateVisual();
+            _activePointers[pointerId] = pos;
+        }
+
+        if (_activePointers.Count >= 2)
+        {
+            if (_isPinching)
+            {
+                Point p1 = default;
+                Point p2 = default;
+                int index = 0;
+                foreach (var kvp in _activePointers)
+                {
+                    if (index == 0) p1 = kvp.Value;
+                    else if (index == 1) { p2 = kvp.Value; break; }
+                    index++;
+                }
+
+                var currentMidpoint = new Point((p1.X + p2.X) / 2, (p1.Y + p2.Y) / 2);
+                var currentDistance = Math.Sqrt(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.Y - p2.Y, 2));
+
+                double scaleFactor = 1.0;
+                if (_initialPinchDistance > 1.0)
+                {
+                    scaleFactor = currentDistance / _initialPinchDistance;
+                }
+
+                if (OriginalImage != null)
+                {
+                    var oldZoom = _zoom;
+                    _zoom = Math.Clamp(_initialZoom * scaleFactor, 0.1, 10.0);
+
+                    var canvasSize = Bounds.Size;
+                    var imgSize = OriginalImage.Size;
+                    var baseScale = Math.Min(canvasSize.Width / imgSize.Width, canvasSize.Height / imgSize.Height);
+
+                    var oldCenter = new Point((canvasSize.Width - imgSize.Width * baseScale * oldZoom) / 2,
+                                              (canvasSize.Height - imgSize.Height * baseScale * oldZoom) / 2);
+
+                    var newCenter = new Point((canvasSize.Width - imgSize.Width * baseScale * _zoom) / 2,
+                                              (canvasSize.Height - imgSize.Height * baseScale * _zoom) / 2);
+
+                    var relativeMidpointPos = (_initialMidpoint - oldCenter - _initialPanOffset) / oldZoom;
+                    var zoomPanOffset = _initialMidpoint - newCenter - relativeMidpointPos * _zoom;
+
+                    var dragDelta = currentMidpoint - _initialMidpoint;
+                    _panOffset = zoomPanOffset + dragDelta;
+                }
+                InvalidateVisual();
+            }
             return;
         }
 
-        if (OriginalImage == null) return;
-        var imgRect = GetImageRect();
+        // Single finger move
+        if (_gestureStartedAsSingleFinger)
+        {
+            if (_isPanning)
+            {
+                var delta = pos - _lastMousePos;
+                _panOffset += delta;
+                _lastMousePos = pos;
+                InvalidateVisual();
+                return;
+            }
 
-        if (_isDrawing)
-        {
-            var imgPos = ScreenToImage(pos, imgRect);
-            var rect = new Rect(_drawStart, imgPos);
-            Boxes[_selectedBoxIndex].Rect = rect;
-            InvalidateVisual();
-        }
-        else if (_dragHandle != -1)
-        {
-            var imgPos = ScreenToImage(pos, imgRect);
-            Boxes[_selectedBoxIndex].Rect = UpdateRectWithHandle(Boxes[_selectedBoxIndex].Rect, _dragHandle, imgPos);
-            InvalidateVisual();
-        }
-        else if (_isMoving)
-        {
-            var startImgPos = ScreenToImage(_lastMousePos, imgRect);
-            var currentImgPos = ScreenToImage(pos, imgRect);
-            var imgDelta = currentImgPos - startImgPos;
-            
-            Boxes[_selectedBoxIndex].Rect = new Rect(
-                _boxAtMoveStart.Position + imgDelta,
-                _boxAtMoveStart.Size);
-            _lastMousePos = pos; // Update last mouse pos to continue delta movement correctly
-            _boxAtMoveStart = Boxes[_selectedBoxIndex].Rect; // Update start rect to current
-            InvalidateVisual();
+            if (OriginalImage == null) return;
+            var imgRect = GetImageRect();
+
+            if (_isDrawing)
+            {
+                var imgPos = ScreenToImage(pos, imgRect);
+                var rect = new Rect(_drawStart, imgPos);
+                Boxes[_selectedBoxIndex].Rect = rect;
+                InvalidateVisual();
+            }
+            else if (_dragHandle != -1)
+            {
+                var imgPos = ScreenToImage(pos, imgRect);
+                Boxes[_selectedBoxIndex].Rect = UpdateRectWithHandle(Boxes[_selectedBoxIndex].Rect, _dragHandle, imgPos);
+                InvalidateVisual();
+            }
+            else if (_isMoving)
+            {
+                var startImgPos = ScreenToImage(_lastMousePos, imgRect);
+                var currentImgPos = ScreenToImage(pos, imgRect);
+                var imgDelta = currentImgPos - startImgPos;
+
+                Boxes[_selectedBoxIndex].Rect = new Rect(
+                    _boxAtMoveStart.Position + imgDelta,
+                    _boxAtMoveStart.Size);
+                _lastMousePos = pos; // Update last mouse pos to continue delta movement correctly
+                _boxAtMoveStart = Boxes[_selectedBoxIndex].Rect; // Update start rect to current
+                InvalidateVisual();
+            }
         }
     }
 
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        var pointerId = e.Pointer.Id;
+        _activePointers.Remove(pointerId);
+
+        e.Pointer.Capture(null);
+
+        bool wasSingleFinger = _gestureStartedAsSingleFinger;
+
+        if (_activePointers.Count == 0)
+        {
+            _isPinching = false;
+            _gestureStartedAsSingleFinger = false;
+
+            if (wasSingleFinger)
+            {
+                _isPanning = false;
+                _isDrawing = false;
+                _isMoving = false;
+                _dragHandle = -1;
+
+                if (_selectedBoxIndex != -1 && _selectedBoxIndex < Boxes.Count)
+                {
+                    // Clamp and validate
+                    var box = Boxes[_selectedBoxIndex];
+                    var clampedRect = ClampRect(box.Rect, OriginalImage!.Size);
+                    if (clampedRect.Width < 1 || clampedRect.Height < 1)
+                    {
+                        Boxes.RemoveAt(_selectedBoxIndex);
+                        _selectedBoxIndex = -1;
+                    }
+                    else
+                    {
+                        box.Rect = clampedRect;
+                    }
+                }
+                InvalidateVisual();
+            }
+        }
+        else if (_activePointers.Count == 1)
+        {
+            _isPinching = false;
+            foreach (var kvp in _activePointers)
+            {
+                _lastMousePos = kvp.Value;
+                break;
+            }
+        }
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        _activePointers.Clear();
+        _isPinching = false;
         _isPanning = false;
         _isDrawing = false;
         _isMoving = false;
         _dragHandle = -1;
-        e.Pointer.Capture(null);
-
-        if (_selectedBoxIndex != -1 && _selectedBoxIndex < Boxes.Count)
-        {
-            // Clamp and validate
-            var box = Boxes[_selectedBoxIndex];
-            var clampedRect = ClampRect(box.Rect, OriginalImage!.Size);
-            if (clampedRect.Width < 1 || clampedRect.Height < 1)
-            {
-                Boxes.RemoveAt(_selectedBoxIndex);
-                _selectedBoxIndex = -1;
-            }
-            else
-            {
-                box.Rect = clampedRect;
-            }
-        }
+        _gestureStartedAsSingleFinger = false;
         InvalidateVisual();
     }
 
