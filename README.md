@@ -18,8 +18,6 @@
 
 VisionEditCV is a cross-platform .NET 8 image editor built around **SAM3** (Segment Anything 3). Open any photo, segment regions with a **bounding box** or a **natural-language prompt**, toggle masks on/off as effect targets, and apply per-region effects with live debounced previews. The same Avalonia codebase ships as a desktop app (Windows / Linux / macOS) and an Android APK.
 
-> Built for the KMITL Computer Vision course (2/2) — but generally useful as a self-hostable AI image editor.
-
 ---
 
 ## ✨ Highlights
@@ -187,7 +185,5 @@ VisionEditCV/                          # repo root
 <div align="center">
 
 **VisionEditCV** · [GitHub](https://github.com/Luck-ai/Vision-Edit) · [Releases](https://github.com/Luck-ai/Vision-Edit/releases) · [Issues](https://github.com/Luck-ai/Vision-Edit/issues)
-
-Built for **KMITL Computer Vision 2/2** · MIT-spirited
 
 </div>
