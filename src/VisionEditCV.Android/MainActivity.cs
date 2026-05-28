@@ -3,7 +3,7 @@ using Android.Content.PM;
 using Android.OS;
 using Avalonia;
 using Avalonia.Android;
-using VisionEditCV.Desktop;
+using VisionEditCV.Shared;
 
 namespace VisionEditCV.Android;
 
@@ -11,14 +11,13 @@ namespace VisionEditCV.Android;
     Label = "VisionEditCV",
     Theme = "@style/MyTheme.NoActionBar",
     Icon = "@android:drawable/sym_def_app_icon",
-    Launcher = false,
     ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode)]
 public class MainActivity : AvaloniaMainActivity<App>
 {
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         // Initialize Emgu.CV native library on Android
-        Emgu.CV.CvInvokeAndroid.Init(this);
+        Emgu.CV.CvInvokeAndroid.Init();
 
         base.OnCreate(savedInstanceState);
     }

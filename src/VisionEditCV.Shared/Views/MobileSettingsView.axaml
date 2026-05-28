@@ -1,0 +1,201 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VisionEditCV.Shared.ViewModels"
+             xmlns:conv="using:VisionEditCV.Shared.Converters"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="430" d:DesignHeight="852"
+             x:Class="VisionEditCV.Shared.Views.MobileSettingsView"
+             x:Name="Root"
+             x:DataType="vm:MainWindowViewModel"
+             Background="{DynamicResource AppBackgroundBrush}">
+
+  <UserControl.Resources>
+    <conv:InverseBoolConverter x:Key="InverseBoolConverter" />
+  </UserControl.Resources>
+
+  <Grid RowDefinitions="Auto, *">
+
+    <Border Grid.Row="0" Classes="top-bar" Padding="16,12">
+      <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="10">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Border Width="30" Height="30" CornerRadius="8"
+                  Background="{DynamicResource AccentSoftBrush}"
+                  BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1">
+            <Path Data="{StaticResource IconLogo}" Width="14" Height="14"
+                  Fill="{DynamicResource AccentBrush}" Stretch="Uniform"
+                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+          <TextBlock Text="VisionEdit" Classes="h2" FontSize="14" VerticalAlignment="Center" />
+        </StackPanel>
+        <Border Grid.Column="2" Classes="status-pill" VerticalAlignment="Center" Padding="9,3">
+          <TextBlock Text="V1.5.0" Classes="mono" FontSize="10" LetterSpacing="0.1"
+                     Foreground="{DynamicResource AccentBrush}" />
+        </Border>
+      </Grid>
+    </Border>
+
+    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto" Padding="0,0,0,110">
+      <StackPanel Margin="18,18,18,0" Spacing="22">
+
+        <StackPanel Spacing="6">
+          <TextBlock Text="NEURAL STUDIO · CONFIG" Classes="mono"
+                     FontSize="10" LetterSpacing="0.16"
+                     Foreground="{DynamicResource TextSecondaryBrush}" />
+          <TextBlock Text="Settings" FontSize="30" FontWeight="Bold" LetterSpacing="-0.025"
+                     Foreground="{DynamicResource TextPrimaryBrush}" />
+        </StackPanel>
+
+        <!-- SAM3 API section -->
+        <StackPanel Spacing="10">
+          <Grid ColumnDefinitions="*, Auto">
+            <TextBlock Grid.Column="0" Text="SAM3 API" Classes="mono" FontSize="10"
+                       LetterSpacing="0.16"
+                       Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+            <Border Grid.Column="1" Classes="status-pill" Padding="9,3"
+                    IsVisible="{Binding IsConnected}">
+              <StackPanel Orientation="Horizontal" Spacing="5">
+                <Ellipse Width="5" Height="5" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" />
+                <TextBlock Text="Connected" Classes="mono" FontSize="10" LetterSpacing="0.1"
+                           Foreground="{DynamicResource SuccessBrush}" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Classes="status-pill-muted" Padding="9,3"
+                    IsVisible="{Binding IsConnected, Converter={StaticResource InverseBoolConverter}}">
+              <TextBlock Text="Offline" Classes="mono" FontSize="10" LetterSpacing="0.1"
+                         Foreground="{DynamicResource TextSecondaryBrush}" />
+            </Border>
+          </Grid>
+          <Border Background="{DynamicResource SurfaceBrush}"
+                  BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                  CornerRadius="14" Padding="16">
+            <StackPanel Spacing="14">
+              <StackPanel Spacing="6">
+                <TextBlock Text="ENDPOINT" Classes="mono" FontSize="10" LetterSpacing="0.14"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                <TextBox Text="{Binding ServerUrl, Mode=TwoWay}" Height="40"
+                         Background="{DynamicResource SurfaceHoverBrush}"
+                         BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                         CornerRadius="10" Padding="10,0" FontFamily="JetBrains Mono, Menlo"
+                         FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}"
+                         VerticalContentAlignment="Center" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Classes="accent" Height="38" Padding="14,0"
+                        Command="{Binding CheckConnectionCommand}" IsEnabled="{Binding CanRunConnectionCheck}">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Path Data="{StaticResource IconApply}" Width="13" Height="13"
+                          Stroke="{DynamicResource OnAccentTextBrush}" StrokeThickness="2.4" Stretch="Uniform" />
+                    <TextBlock Text="{Binding ConnectionButtonText}" FontSize="11" FontWeight="Bold"
+                               LetterSpacing="0.08" />
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+              <StackPanel Spacing="4">
+                <Grid ColumnDefinitions="*, Auto">
+                  <TextBlock Grid.Column="0" Text="Status" FontSize="11"
+                             Foreground="{DynamicResource TextSecondaryBrush}" />
+                  <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" Classes="mono" FontSize="11"
+                             Foreground="{DynamicResource TextPrimaryBrush}" />
+                </Grid>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- Updates section -->
+        <StackPanel Spacing="10">
+          <TextBlock Text="UPDATES" Classes="mono" FontSize="10" LetterSpacing="0.16"
+                     Foreground="{DynamicResource TextSecondaryBrush}" />
+          <Border Background="{DynamicResource SurfaceBrush}"
+                  BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                  CornerRadius="14" Padding="16">
+            <StackPanel Spacing="12">
+              <Grid ColumnDefinitions="*, Auto">
+                <StackPanel Grid.Column="0" Spacing="2">
+                  <TextBlock Text="App version" FontSize="13" FontWeight="SemiBold"
+                             Foreground="{DynamicResource TextPrimaryBrush}" />
+                  <TextBlock Text="{Binding UpdateStatus}" FontSize="11"
+                             Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="V1.5.0" Classes="mono" FontSize="11"
+                           Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+              </Grid>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Classes="ghost" Height="36" Padding="14,0"
+                        Command="{Binding CheckForUpdatesCommand}" IsEnabled="{Binding CanCheckForUpdate}">
+                  <TextBlock Text="Check for updates" FontSize="11" FontWeight="SemiBold" />
+                </Button>
+                <Button Classes="accent" Height="36" Padding="14,0"
+                        Command="{Binding ApplyUpdateCommand}"
+                        IsVisible="{Binding IsUpdateAvailable}">
+                  <TextBlock Text="INSTALL UPDATE" FontSize="11" FontWeight="Bold" LetterSpacing="0.08" />
+                </Button>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- Workspace section -->
+        <StackPanel Spacing="10">
+          <TextBlock Text="WORKSPACE" Classes="mono" FontSize="10" LetterSpacing="0.16"
+                     Foreground="{DynamicResource TextSecondaryBrush}" />
+          <Border Background="{DynamicResource SurfaceBrush}"
+                  BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                  CornerRadius="14" ClipToBounds="True">
+            <StackPanel>
+              <Button Background="Transparent" BorderThickness="0" CornerRadius="0" Padding="14,13"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                      Command="{Binding ResetAllCommand}">
+                <Grid ColumnDefinitions="*, Auto, Auto" ColumnSpacing="10">
+                  <TextBlock Grid.Column="0" Text="Reset workspace" FontSize="13.5"
+                             Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="Clears masks &amp; history" Classes="mono" FontSize="11"
+                             Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                  <Path Grid.Column="2" Data="{StaticResource IconChevronRight}" Width="14" Height="14"
+                        Stroke="{DynamicResource TextTertiaryBrush}" StrokeThickness="2"
+                        Stretch="Uniform" VerticalAlignment="Center" />
+                </Grid>
+              </Button>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- About -->
+        <StackPanel Spacing="10">
+          <TextBlock Text="ABOUT" Classes="mono" FontSize="10" LetterSpacing="0.16"
+                     Foreground="{DynamicResource TextSecondaryBrush}" />
+          <Border Background="{DynamicResource SurfaceBrush}"
+                  BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                  CornerRadius="14" Padding="16">
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="*, Auto">
+                <TextBlock Grid.Column="0" Text="Build" FontSize="13"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Grid.Column="1" Text="2026.05.28" Classes="mono" FontSize="11"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+              </Grid>
+              <Grid ColumnDefinitions="*, Auto">
+                <TextBlock Grid.Column="0" Text="Runtime" FontSize="13"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Grid.Column="1" Text=".NET 8 · Avalonia" Classes="mono" FontSize="11"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+              </Grid>
+              <Grid ColumnDefinitions="*, Auto">
+                <TextBlock Grid.Column="0" Text="Inference" FontSize="13"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Grid.Column="1" Text="SAM3 + EmguCV" Classes="mono" FontSize="11"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+          <TextBlock Text="VisionEdit Studio · 1.5.0 · KMITL Computer Vision 2.2"
+                     FontSize="11" TextAlignment="Center"
+                     Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,8,0,0" />
+        </StackPanel>
+
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

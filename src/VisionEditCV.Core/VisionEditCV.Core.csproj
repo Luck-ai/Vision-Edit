@@ -4,24 +4,30 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <UseRidGraph>true</UseRidGraph>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Managed Emgu.CV 4.12 — matches the desktop "mini" natives below. The
+         Android project pins its own Emgu.CV 4.9 + maui.mini.android natives
+         (the 4.10+ Android natives require net9.0-android). -->
     <PackageReference Include="Emgu.CV" Version="4.12.0.5764" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="SkiaSharp" Version="3.119.2" />
+    <PackageReference Include="SkiaSharp" Version="2.88.9" />
   </ItemGroup>
 
+  <!-- Desktop natives are the "mini" variants — they drop FFmpeg deps that the
+       full runtime packages need (libavcodec.so.58 isn't on Ubuntu 24+). -->
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Linux')))">
-    <PackageReference Include="Emgu.CV.runtime.ubuntu-x64" Version="4.12.0.5764" />
+    <PackageReference Include="Emgu.CV.runtime.mini.ubuntu-x64" Version="4.12.0.5764" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows')))">
-    <PackageReference Include="Emgu.CV.runtime.windows" Version="4.12.0.5764" />
+    <PackageReference Include="Emgu.CV.runtime.mini.windows" Version="4.12.0.5764" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'osx-x64' Or '$(RuntimeIdentifier)' == 'osx-arm64' Or ('$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX')))">
-    <PackageReference Include="Emgu.CV.runtime.macos" Version="4.12.0.5764" />
+    <PackageReference Include="Emgu.CV.runtime.mini.macos" Version="4.12.0.5764" />
   </ItemGroup>
 
 </Project>

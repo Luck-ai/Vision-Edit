@@ -1,0 +1,964 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VisionEditCV.Shared.ViewModels"
+             xmlns:controls="clr-namespace:VisionEditCV.Shared.Controls"
+             xmlns:conv="using:VisionEditCV.Shared.Converters"
+             xmlns:cp="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.ColorPicker"
+             x:Class="VisionEditCV.Shared.Views.MobileView"
+             x:Name="Root"
+             x:DataType="vm:MainWindowViewModel"
+             Background="{DynamicResource AppBackgroundBrush}">
+
+    <UserControl.KeyBindings>
+        <KeyBinding Gesture="Ctrl+O" Command="{Binding OpenImageCommand}" CommandParameter="{Binding #Root}" />
+        <KeyBinding Gesture="Ctrl+S" Command="{Binding SaveImageCommand}" CommandParameter="{Binding #Root}" />
+        <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoEffectCommand}" />
+        <KeyBinding Gesture="Ctrl+Enter" Command="{Binding SegmentCommand}" />
+        <KeyBinding Gesture="Escape" Command="{Binding CloseMobileSheetCommand}" />
+    </UserControl.KeyBindings>
+
+    <UserControl.Resources>
+        <conv:EnumToBoolConverter x:Key="EnumToBoolConverter" />
+        <conv:BoolToColorConverter x:Key="BoolToColorConverter" />
+        <conv:ColorToBrushConverter x:Key="ColorToBrushConverter" />
+        <conv:CollectionCountToBoolConverter x:Key="CollectionCountToBoolConverter" />
+        <conv:InverseBoolConverter x:Key="InverseBoolConverter" />
+        <conv:BoolToDoubleConverter x:Key="BoolToDoubleConverter" />
+        <conv:IntEqualsConverter x:Key="IntEqualsConverter" />
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+        <!-- Bottom-nav button: vertical icon+label -->
+        <Style Selector="Button.nav-btn">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="6,7" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
+        </Style>
+        <Style Selector="Button.nav-btn /template/ ContentPresenter">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.nav-btn:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        </Style>
+        <Style Selector="Button.nav-btn.active">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        <Style Selector="Button.nav-btn.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+        </Style>
+        <Style Selector="Button.nav-btn.cta">
+            <Setter Property="Foreground" Value="{DynamicResource OnAccentTextBrush}" />
+        </Style>
+        <Style Selector="Button.nav-btn.cta /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+        </Style>
+        <Style Selector="Button.nav-btn Path">
+            <Setter Property="Stroke" Value="{Binding $parent[Button].Foreground}" />
+            <Setter Property="StrokeThickness" Value="1.7" />
+            <Setter Property="Fill" Value="Transparent" />
+        </Style>
+
+        <!-- Drawer item -->
+        <Style Selector="Button.drawer-item">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Padding" Value="16,12" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+        </Style>
+        <Style Selector="Button.drawer-item:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Panel x:Name="OuterRoot" Background="{DynamicResource AppBackgroundBrush}">
+
+        <!-- ============================================================
+             MAIN UI · top bar / canvas+sheet / bottom nav
+             ============================================================ -->
+        <Grid x:Name="RootGrid" RowDefinitions="Auto, *, Auto">
+
+            <!-- Top bar -->
+            <Border Grid.Row="0" Classes="top-bar" Padding="8,8">
+                <Grid ColumnDefinitions="Auto, Auto, *, Auto" ColumnSpacing="8">
+                    <Button Grid.Column="0" Classes="icon-button"
+                            Command="{Binding BackToLibraryCommand}"
+                            ToolTip.Tip="Back to library">
+                        <Path Classes="icon icon-muted" Data="{StaticResource IconChevronLeft}"
+                              Width="16" Height="16" />
+                    </Button>
+                    <Border Grid.Column="1" Width="30" Height="30" CornerRadius="8"
+                            Background="{DynamicResource AccentSoftBrush}"
+                            BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1"
+                            VerticalAlignment="Center">
+                        <Path Data="{StaticResource IconLogo}" Width="14" Height="14"
+                              Fill="{DynamicResource AccentBrush}" Stretch="Uniform"
+                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="2" Spacing="0" VerticalAlignment="Center" Margin="2,0,0,0">
+                        <TextBlock Text="VisionEdit" Classes="h2" FontSize="13.5" />
+                        <TextBlock Text="{Binding ImageFileName}" Classes="label" FontSize="9.5"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <Border Grid.Column="3" Classes="status-pill" VerticalAlignment="Center"
+                            IsVisible="{Binding IsConnected}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Ellipse Width="5" Height="5" Fill="{DynamicResource SuccessBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="Online" Classes="label-strong" FontSize="9"
+                                       Foreground="{DynamicResource SuccessBrush}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="3" Classes="status-pill-muted" VerticalAlignment="Center"
+                            IsVisible="{Binding IsConnected, Converter={StaticResource InverseBoolConverter}}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Ellipse Width="5" Height="5" Fill="{DynamicResource TextTertiaryBrush}" VerticalAlignment="Center" />
+                            <TextBlock Text="Offline" Classes="label-strong" FontSize="9"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Canvas + modal sheet area -->
+            <Panel Grid.Row="1">
+                <!-- Canvas -->
+                <Border Margin="8,8,8,8"
+                        Background="{DynamicResource CanvasSurfaceBrush}"
+                        CornerRadius="14"
+                        ClipToBounds="True"
+                        BorderBrush="{DynamicResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        BoxShadow="inset 0 0 30 0 #000000B0">
+                    <Panel>
+                        <Border Height="2" VerticalAlignment="Top" IsVisible="{Binding HasImage}">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0%,50%" EndPoint="100%,50%">
+                                    <GradientStop Color="#00000000" Offset="0" />
+                                    <GradientStop Color="#22D3EE" Offset="0.5" />
+                                    <GradientStop Color="#00000000" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+
+                        <ProgressBar VerticalAlignment="Top"
+                                     IsIndeterminate="True"
+                                     IsVisible="{Binding IsLoading}"
+                                     Classes="loading" />
+
+                        <controls:ImageCanvas
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            OriginalImage="{Binding CurrentImage}"
+                            ProcessedImage="{Binding ProcessedImage}"
+                            Mode="{Binding CanvasMode}"
+                            Boxes="{Binding Boxes}"
+                            Masks="{Binding Masks}"
+                            HideMasks="{Binding AreMasksHidden}"
+                            MaskVisibility="{Binding MaskVisibilityStates}"
+                            IsCompareMode="{Binding IsCompareMode}" />
+
+                        <!-- Empty state -->
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12"
+                                    IsVisible="{Binding CurrentImage, Converter={x:Static ObjectConverters.IsNull}}">
+                            <Border Width="64" Height="64" CornerRadius="16"
+                                    Background="{DynamicResource AccentSoftBrush}"
+                                    BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1">
+                                <Path Data="{StaticResource IconImage}" Width="26" Height="26"
+                                      Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.6"
+                                      Stretch="Uniform" Fill="Transparent" />
+                            </Border>
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="No image loaded" Classes="h1" FontSize="14" HorizontalAlignment="Center" />
+                                <TextBlock Text="Tap Open to import an image."
+                                           Classes="label" FontSize="11" Opacity="0.85" HorizontalAlignment="Center" />
+                            </StackPanel>
+                            <Button Command="{Binding OpenImageCommand}"
+                                    CommandParameter="{Binding #Root}"
+                                    Classes="primary">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Path Classes="icon" Data="{StaticResource IconImport}" Width="13" Height="13" Stroke="White" />
+                                    <TextBlock Text="Import Image" FontSize="12" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Floating canvas toolbar -->
+                        <Border Classes="canvas-toolbar"
+                                VerticalAlignment="Top" HorizontalAlignment="Right"
+                                Margin="0,10,10,0"
+                                IsVisible="{Binding HasImage}">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <Button Command="{Binding ToggleCompareCommand}"
+                                        Classes="toolbar-btn"
+                                        Classes.active="{Binding IsCompareMode}"
+                                        ToolTip.Tip="Compare original vs result">
+                                    <Path Classes="icon-toolbar" Data="{StaticResource IconCompare}" Width="14" Height="14" />
+                                </Button>
+                                <Button Command="{Binding ToggleHideMasksCommand}"
+                                        Classes="toolbar-btn"
+                                        IsEnabled="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}}">
+                                    <Panel Width="14" Height="14">
+                                        <Path Classes="icon-toolbar" Data="{StaticResource IconVisibility}" Width="14" Height="14"
+                                              IsVisible="{Binding AreMasksHidden, Converter={StaticResource InverseBoolConverter}}" />
+                                        <Path Classes="icon-toolbar" Data="{StaticResource IconVisibilityOff}" Width="14" Height="14"
+                                              IsVisible="{Binding AreMasksHidden}" />
+                                    </Panel>
+                                </Button>
+                                <Button Command="{Binding UndoEffectCommand}"
+                                        Classes="toolbar-btn"
+                                        IsEnabled="{Binding CanUndoEffect}">
+                                    <Path Classes="icon-toolbar" Data="{StaticResource IconUndo}" Width="14" Height="14" />
+                                </Button>
+                                <Border Classes="canvas-toolbar-divider" />
+                                <Button Command="{Binding ClearMasksCommand}"
+                                        Classes="toolbar-btn danger"
+                                        IsEnabled="{Binding CanClearWorkspace}">
+                                    <Path Classes="icon-toolbar" Data="{StaticResource IconClear}" Width="14" Height="14" />
+                                </Button>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Compare badge -->
+                        <Border Classes="compare-badge"
+                                IsVisible="{Binding IsCompareMode}"
+                                VerticalAlignment="Top" HorizontalAlignment="Center"
+                                Margin="0,10,0,0">
+                            <TextBlock Text="◧  ORIGINAL REFERENCE" FontSize="10" FontWeight="Bold"
+                                       Foreground="{DynamicResource OnAccentTextBrush}" />
+                        </Border>
+
+                        <!-- Processing overlay -->
+                        <Border IsVisible="{Binding IsLoading}"
+                                Background="{DynamicResource CanvasOverlayBrush}"
+                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
+                                <Border Width="64" Height="64" CornerRadius="18"
+                                        Background="{DynamicResource AccentSoftBrush}"
+                                        BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"
+                                        BoxShadow="0 0 28 0 #4022D3EE">
+                                    <Path Data="{StaticResource IconSpark}" Width="28" Height="28"
+                                          Fill="{DynamicResource AccentBrush}" Stretch="Uniform" />
+                                </Border>
+                                <StackPanel Spacing="3" HorizontalAlignment="Center">
+                                    <TextBlock Text="Processing" Classes="h1" FontSize="14" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Running neural segmentation" Classes="label" FontSize="10.5" HorizontalAlignment="Center" />
+                                </StackPanel>
+                                <ProgressBar IsIndeterminate="True" Width="160" Classes="loading" />
+                            </StackPanel>
+                        </Border>
+                    </Panel>
+                </Border>
+
+                <!-- Sheet scrim — dismiss by tap -->
+                <Border Background="#66000000"
+                        IsVisible="{Binding IsMobileSheetOpen}"
+                        Tapped="OnSheetScrimTapped" />
+
+                <!-- Modal bottom sheet -->
+                <Border IsVisible="{Binding IsMobileSheetOpen}"
+                        VerticalAlignment="Bottom"
+                        MaxHeight="420"
+                        Background="{DynamicResource PanelElevatedBrush}"
+                        BorderBrush="{DynamicResource BorderSubtleBrush}"
+                        BorderThickness="1,1,1,0"
+                        CornerRadius="18,18,0,0"
+                        BoxShadow="0 -10 32 0 #80000000">
+                    <Grid RowDefinitions="Auto, Auto, *">
+                        <!-- Drag handle -->
+                        <Border Grid.Row="0" Width="38" Height="4" CornerRadius="4"
+                                Background="{DynamicResource BorderStrongBrush}"
+                                HorizontalAlignment="Center" Margin="0,8,0,4" />
+                        <!-- Header -->
+                        <Grid Grid.Row="1" ColumnDefinitions="*, Auto" Margin="14,4,8,8">
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding MobileSheetTitle}"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Classes="icon-button"
+                                    Command="{Binding CloseMobileSheetCommand}"
+                                    ToolTip.Tip="Close">
+                                <Path Classes="icon icon-muted" Data="{StaticResource IconClose}" Width="13" Height="13" />
+                            </Button>
+                        </Grid>
+
+                        <!-- Per-tab content -->
+                        <Panel Grid.Row="2">
+
+                            <!-- SEGMENT SHEET -->
+                            <ScrollViewer IsVisible="{Binding IsMobileSegmentSheet}" Padding="14,0,14,14">
+                                <StackPanel Spacing="10">
+                                    <Border Classes="tool-pill">
+                                        <UniformGrid Columns="2">
+                                            <RadioButton Classes="tool-btn" Content="Box"
+                                                         IsChecked="{Binding SelectedTool, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Bounding Box'}"
+                                                         Command="{Binding SelectToolCommand}" CommandParameter="Bounding Box" />
+                                            <RadioButton Classes="tool-btn" Content="Text"
+                                                         IsChecked="{Binding SelectedTool, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Prompt'}"
+                                                         Command="{Binding SelectToolCommand}" CommandParameter="Prompt" />
+                                        </UniformGrid>
+                                    </Border>
+
+                                    <Border Background="{DynamicResource SurfaceBrush}"
+                                            BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                                            CornerRadius="10" Padding="12,10"
+                                            IsVisible="{Binding SelectedTool, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Bounding Box'}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Path Classes="icon icon-tertiary" Data="{StaticResource IconSegment}" Width="14" Height="14" VerticalAlignment="Center" />
+                                            <TextBlock Text="Drag a box on the canvas, then tap Segment."
+                                                       Classes="label" FontSize="11"
+                                                       TextWrapping="Wrap" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Classes="composer"
+                                            IsVisible="{Binding SelectedTool, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Prompt'}">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <Path Grid.Column="0" Classes="icon icon-tertiary" Data="{StaticResource IconSearch}"
+                                                  Width="13" Height="13" Margin="12,0,6,0" VerticalAlignment="Center" />
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding PromptText}"
+                                                     Watermark="Describe what to segment…"
+                                                     FontSize="12" Padding="0,10,8,10" />
+                                        </Grid>
+                                    </Border>
+
+                                    <Button Command="{Binding SegmentCommand}"
+                                            Classes="accent"
+                                            HorizontalAlignment="Stretch"
+                                            Height="42" CornerRadius="10"
+                                            IsEnabled="{Binding CanRunSegment}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                            <Path Classes="icon" Data="{StaticResource IconBolt}" Width="13" Height="13"
+                                                  Stroke="{DynamicResource OnAccentTextBrush}" />
+                                            <TextBlock Text="{Binding SegmentButtonText}" FontSize="12" FontWeight="Bold" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding CheckConnectionCommand}"
+                                            Classes="ghost"
+                                            HorizontalAlignment="Stretch"
+                                            Height="36"
+                                            IsEnabled="{Binding CanRunConnectionCheck}">
+                                        <TextBlock Text="{Binding ConnectionButtonText}" FontSize="11" />
+                                    </Button>
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <!-- EFFECTS SHEET -->
+                            <Grid IsVisible="{Binding IsMobileEffectsSheet}" RowDefinitions="Auto, *, Auto">
+                                <ScrollViewer Grid.Row="0"
+                                              HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Disabled"
+                                              Padding="14,0,14,6">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <RadioButton Classes="effect-chip" Content="Color"
+                                                     Command="{Binding SelectEffectCommand}" CommandParameter="Color Grading"
+                                                     IsChecked="{Binding SelectedEffect, Mode=OneWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Color Grading'}" />
+                                        <RadioButton Classes="effect-chip" Content="Grayscale"
+                                                     Command="{Binding SelectEffectCommand}" CommandParameter="Grayscale"
+                                                     IsChecked="{Binding SelectedEffect, Mode=OneWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Grayscale'}" />
+                                        <RadioButton Classes="effect-chip" Content="Artistic"
+                                                     Command="{Binding SelectEffectCommand}" CommandParameter="Artistic Style"
+                                                     IsChecked="{Binding SelectedEffect, Mode=OneWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Artistic Style'}" />
+                                        <RadioButton Classes="effect-chip" Content="Sticker"
+                                                     Command="{Binding SelectEffectCommand}" CommandParameter="Sticker Generation"
+                                                     IsChecked="{Binding SelectedEffect, Mode=OneWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Sticker Generation'}" />
+                                        <RadioButton Classes="effect-chip" Content="Pixel / Blur"
+                                                     Command="{Binding SelectEffectCommand}" CommandParameter="Pixelation &amp; Blur"
+                                                     IsChecked="{Binding SelectedEffect, Mode=OneWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Pixelation &amp; Blur'}" />
+                                        <RadioButton Classes="effect-chip" Content="Portrait"
+                                                     Command="{Binding SelectEffectCommand}" CommandParameter="Portrait Effect"
+                                                     IsChecked="{Binding SelectedEffect, Mode=OneWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Portrait Effect'}" />
+                                    </StackPanel>
+                                </ScrollViewer>
+
+                                <ScrollViewer Grid.Row="1"
+                                              Padding="14,4,14,8"
+                                              HorizontalScrollBarVisibility="Disabled"
+                                              VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Spacing="6">
+                                        <!-- Helper when no effect picked -->
+                                        <StackPanel HorizontalAlignment="Center" Margin="12,18"
+                                                    IsVisible="{Binding SelectedEffect, Converter={x:Static StringConverters.IsNullOrEmpty}}">
+                                            <TextBlock Text="Pick an effect above" Classes="h3" FontSize="11" HorizontalAlignment="Center" />
+                                            <TextBlock Text="Adjust parameters then tap Apply."
+                                                       Classes="label" FontSize="10.5" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                                        </StackPanel>
+
+                                        <!-- COLOR GRADING -->
+                                        <StackPanel Spacing="6"
+                                                    IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Color Grading'}">
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="Target" Classes="h3" />
+                                                    <Border Classes="tool-pill">
+                                                        <UniformGrid Columns="2">
+                                                            <RadioButton Classes="tool-btn" Content="Foreground" IsChecked="{Binding CgIsForeground}" />
+                                                            <RadioButton Classes="tool-btn" Content="Background" IsChecked="{Binding CgIsForeground, Converter={StaticResource InverseBoolConverter}}" />
+                                                        </UniformGrid>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="Tint Color" Classes="h3" />
+                                                    <Button Classes="color-button">
+                                                        <Button.Flyout>
+                                                            <Flyout Placement="Top">
+                                                                <Border Classes="flyout-panel" Padding="8">
+                                                                    <cp:ColorView Color="{Binding CgTintColor, Mode=TwoWay}" />
+                                                                </Border>
+                                                            </Flyout>
+                                                        </Button.Flyout>
+                                                        <Grid ColumnDefinitions="*, Auto">
+                                                            <Border Classes="color-fill"
+                                                                    Background="{Binding CgTintColor, Converter={StaticResource ColorToBrushConverter}}" />
+                                                            <Path Grid.Column="1" Classes="icon icon-muted"
+                                                                  Data="{StaticResource IconChevronDown}"
+                                                                  Width="13" Height="13" Margin="0,0,12,0"
+                                                                  VerticalAlignment="Center" />
+                                                        </Grid>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Tint Mix" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding CgTintStrength, StringFormat={}{0:P0}}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="0" Maximum="1" Value="{Binding CgTintStrength}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Brightness" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding CgBrightness}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="-100" Maximum="100" Value="{Binding CgBrightness}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Contrast" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding CgContrast}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="1" Maximum="30" Value="{Binding CgContrast}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- GRAYSCALE -->
+                                        <StackPanel Spacing="6"
+                                                    IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Grayscale'}">
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="Target" Classes="h3" />
+                                                    <Border Classes="tool-pill">
+                                                        <UniformGrid Columns="2">
+                                                            <RadioButton Classes="tool-btn" Content="Foreground" IsChecked="{Binding GsIsForeground}" />
+                                                            <RadioButton Classes="tool-btn" Content="Background" IsChecked="{Binding GsIsForeground, Converter={StaticResource InverseBoolConverter}}" />
+                                                        </UniformGrid>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- ARTISTIC -->
+                                        <StackPanel Spacing="6"
+                                                    IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Artistic Style'}">
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="Mode" Classes="h3" />
+                                                    <Border Classes="tool-pill">
+                                                        <UniformGrid Columns="2">
+                                                            <RadioButton Classes="tool-btn" Content="Stylize" IsChecked="{Binding ArtIsStylize}" />
+                                                            <RadioButton Classes="tool-btn" Content="Pencil" IsChecked="{Binding ArtIsStylize, Converter={StaticResource InverseBoolConverter}}" />
+                                                        </UniformGrid>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Sigma S" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding ArtSigmaS}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="1" Maximum="200" Value="{Binding ArtSigmaS}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Sigma R" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding ArtSigmaR}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="1" Maximum="100" Value="{Binding ArtSigmaR}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Shade Factor" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding ArtShadeFactor}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="1" Maximum="100" Value="{Binding ArtShadeFactor}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- STICKER -->
+                                        <StackPanel Spacing="6"
+                                                    IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Sticker Generation'}">
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Scale" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding StScale}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="1" Maximum="50" Value="{Binding StScale}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Rotation" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding StRotation}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="-180" Maximum="180" Value="{Binding StRotation}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="Border Color" Classes="h3" />
+                                                    <Button Classes="color-button">
+                                                        <Button.Flyout>
+                                                            <Flyout Placement="Top">
+                                                                <Border Classes="flyout-panel" Padding="8">
+                                                                    <cp:ColorView Color="{Binding StBorderColor, Mode=TwoWay}" />
+                                                                </Border>
+                                                            </Flyout>
+                                                        </Button.Flyout>
+                                                        <Grid ColumnDefinitions="*, Auto">
+                                                            <Border Classes="color-fill"
+                                                                    Background="{Binding StBorderColor, Converter={StaticResource ColorToBrushConverter}}" />
+                                                            <Path Grid.Column="1" Classes="icon icon-muted"
+                                                                  Data="{StaticResource IconChevronDown}"
+                                                                  Width="13" Height="13" Margin="0,0,12,0"
+                                                                  VerticalAlignment="Center" />
+                                                        </Grid>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Thickness" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding StThickness}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="1" Maximum="30" Value="{Binding StThickness}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Shadow Blur" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding StShadowBlur}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="0" Maximum="100" Value="{Binding StShadowBlur}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="Background" Classes="h3" />
+                                                    <ComboBox SelectedIndex="{Binding StBackgroundMode}" HorizontalAlignment="Stretch">
+                                                        <ComboBoxItem Content="Original" />
+                                                        <ComboBoxItem Content="Solid Color" />
+                                                        <ComboBoxItem Content="Image File" />
+                                                        <ComboBoxItem Content="Transparent" />
+                                                    </ComboBox>
+                                                    <Button Classes="color-button" IsVisible="{Binding StShowSolidBackground}">
+                                                        <Button.Flyout>
+                                                            <Flyout Placement="Top">
+                                                                <Border Classes="flyout-panel" Padding="8">
+                                                                    <cp:ColorView Color="{Binding StBackgroundColor, Mode=TwoWay}" />
+                                                                </Border>
+                                                            </Flyout>
+                                                        </Button.Flyout>
+                                                        <Grid ColumnDefinitions="*, Auto">
+                                                            <Border Classes="color-fill"
+                                                                    Background="{Binding StBackgroundColor, Converter={StaticResource ColorToBrushConverter}}" />
+                                                            <Path Grid.Column="1" Classes="icon icon-muted"
+                                                                  Data="{StaticResource IconChevronDown}"
+                                                                  Width="12" Height="12" Margin="0,0,10,0"
+                                                                  VerticalAlignment="Center" />
+                                                        </Grid>
+                                                    </Button>
+                                                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="6"
+                                                          IsVisible="{Binding StShowImageBackground}">
+                                                        <Button Grid.Column="0"
+                                                                Command="{Binding PickStickerBackgroundCommand}"
+                                                                CommandParameter="{Binding #Root}"
+                                                                Classes="ghost" Height="32" Padding="12,0">
+                                                            <Path Classes="icon icon-muted" Data="{StaticResource IconImport}" Width="12" Height="12" />
+                                                        </Button>
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding StickerBackgroundFileName}"
+                                                                   Classes="label" FontSize="10"
+                                                                   VerticalAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- PIXELATION & BLUR -->
+                                        <StackPanel Spacing="6"
+                                                    IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Pixelation &amp; Blur'}">
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="Mode" Classes="h3" />
+                                                    <Border Classes="tool-pill">
+                                                        <UniformGrid Columns="2">
+                                                            <RadioButton Classes="tool-btn" Content="Pixelate" IsChecked="{Binding PbIsPixelate}" />
+                                                            <RadioButton Classes="tool-btn" Content="Blur" IsChecked="{Binding PbIsPixelate, Converter={StaticResource InverseBoolConverter}}" />
+                                                        </UniformGrid>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <TextBlock Text="Target" Classes="h3" />
+                                                    <Border Classes="tool-pill">
+                                                        <UniformGrid Columns="2">
+                                                            <RadioButton Classes="tool-btn" Content="Foreground" IsChecked="{Binding PbIsForeground}" />
+                                                            <RadioButton Classes="tool-btn" Content="Background" IsChecked="{Binding PbIsForeground, Converter={StaticResource InverseBoolConverter}}" />
+                                                        </UniformGrid>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Intensity" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding PbIntensity}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="1" Maximum="100" Value="{Binding PbIntensity}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- PORTRAIT -->
+                                        <StackPanel Spacing="6"
+                                                    IsVisible="{Binding SelectedEffect, Converter={StaticResource EnumToBoolConverter}, ConverterParameter='Portrait Effect'}">
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Blur Strength" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding PtBlurStrength}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="3" Maximum="501" Value="{Binding PtBlurStrength}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Classes="param-group">
+                                                <StackPanel Spacing="6">
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Text="Feather Edge" Classes="h3" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding PtFeatherAmount}" Classes="mono-accent" />
+                                                    </Grid>
+                                                    <Slider Minimum="0" Maximum="501" Value="{Binding PtFeatherAmount}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </ScrollViewer>
+
+                                <Border Grid.Row="2"
+                                        BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="14,10">
+                                    <Button Command="{Binding ApplyEffectCommand}"
+                                            Classes="action-primary"
+                                            HorizontalAlignment="Stretch" Height="40"
+                                            IsEnabled="{Binding CanApplyEffects}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                            <Path Classes="icon" Data="{StaticResource IconApply}" Width="13" Height="13"
+                                                  Stroke="{DynamicResource OnAccentTextBrush}" />
+                                            <TextBlock Text="Apply Effect" FontSize="12" FontWeight="Bold" />
+                                        </StackPanel>
+                                    </Button>
+                                </Border>
+                            </Grid>
+
+                            <!-- LAYERS SHEET -->
+                            <Grid IsVisible="{Binding IsMobileLayersSheet}" RowDefinitions="*, Auto">
+                                <ScrollViewer Grid.Row="0" Padding="14,0,14,8">
+                                    <Panel>
+                                        <StackPanel Spacing="10"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    Margin="16,30"
+                                                    IsVisible="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}, ConverterParameter='invert'}">
+                                            <Border Width="44" Height="44" CornerRadius="12" HorizontalAlignment="Center"
+                                                    Background="{DynamicResource SurfaceBrush}"
+                                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                                <Path Classes="icon icon-tertiary" Data="{StaticResource IconLayers}" Width="20" Height="20" />
+                                            </Border>
+                                            <TextBlock Text="No masks yet" Classes="h2" FontSize="13" HorizontalAlignment="Center" />
+                                            <TextBlock Text="Tap Segment, then draw a box or enter a prompt."
+                                                       Classes="label" FontSize="10.5" MaxWidth="240"
+                                                       TextWrapping="Wrap" TextAlignment="Center" />
+                                        </StackPanel>
+
+                                        <ListBox ItemsSource="{Binding MaskItems}"
+                                                 SelectedIndex="{Binding SelectedMaskIndex}"
+                                                 Classes="mask-list"
+                                                 IsVisible="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}}">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Classes="mask-card" Padding="12,10">
+                                                        <Grid ColumnDefinitions="4, *, Auto" ColumnSpacing="12">
+                                                            <Border Grid.Column="0" Classes="mask-stripe"
+                                                                    Background="{Binding Color, Converter={StaticResource ColorToBrushConverter}}" />
+                                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" />
+                                                                <TextBlock Text="Neural segment" Classes="label" FontSize="10" />
+                                                            </StackPanel>
+                                                            <CheckBox Grid.Column="2" IsChecked="{Binding IsVisible}"
+                                                                      VerticalAlignment="Center" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Panel>
+                                </ScrollViewer>
+
+                                <Border Grid.Row="1"
+                                        BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="14,10">
+                                    <Button Command="{Binding ToggleHideMasksCommand}"
+                                            Classes="ghost"
+                                            HorizontalAlignment="Stretch" Height="36"
+                                            IsEnabled="{Binding MaskItems.Count, Converter={StaticResource CollectionCountToBoolConverter}}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                                            <Path Classes="icon icon-muted" Data="{StaticResource IconVisibility}" Width="13" Height="13"
+                                                  IsVisible="{Binding AreMasksHidden, Converter={StaticResource InverseBoolConverter}}" />
+                                            <Path Classes="icon icon-muted" Data="{StaticResource IconVisibilityOff}" Width="13" Height="13"
+                                                  IsVisible="{Binding AreMasksHidden}" />
+                                            <TextBlock Text="{Binding HideMasksButtonText}" FontSize="11" />
+                                        </StackPanel>
+                                    </Button>
+                                </Border>
+                            </Grid>
+
+                            <!-- HISTORY SHEET -->
+                            <Grid IsVisible="{Binding IsMobileHistorySheet}" RowDefinitions="*, Auto">
+                                <ScrollViewer Grid.Row="0" Padding="14,0,14,8">
+                                    <Panel>
+                                        <StackPanel Spacing="10"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    Margin="16,30"
+                                                    IsVisible="{Binding HasHistory, Converter={StaticResource InverseBoolConverter}}">
+                                            <Border Width="44" Height="44" CornerRadius="12" HorizontalAlignment="Center"
+                                                    Background="{DynamicResource SurfaceBrush}"
+                                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                                                <Path Classes="icon icon-tertiary" Data="{StaticResource IconHistory}" Width="20" Height="20" />
+                                            </Border>
+                                            <TextBlock Text="No effects applied" Classes="h2" FontSize="13" HorizontalAlignment="Center" />
+                                            <TextBlock Text="Applied effects appear here so you can step back."
+                                                       Classes="label" FontSize="10.5" MaxWidth="240"
+                                                       TextWrapping="Wrap" TextAlignment="Center" />
+                                        </StackPanel>
+
+                                        <ItemsControl ItemsSource="{Binding History}" IsVisible="{Binding HasHistory}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <ReversibleStackPanel ReverseOrder="True" Spacing="6" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Classes="history-row">
+                                                        <Grid ColumnDefinitions="Auto, *" ColumnSpacing="10">
+                                                            <Border Grid.Column="0" Width="28" Height="28" CornerRadius="8"
+                                                                    Background="{DynamicResource AccentSoftBrush}"
+                                                                    BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1"
+                                                                    VerticalAlignment="Center">
+                                                                <Path Classes="icon icon-accent" Data="{StaticResource IconApply}"
+                                                                      Width="12" Height="12" />
+                                                            </Border>
+                                                            <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding}" FontWeight="SemiBold" FontSize="13"
+                                                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                                <TextBlock Text="Applied effect" Classes="label" FontSize="10" />
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Panel>
+                                </ScrollViewer>
+
+                                <Border Grid.Row="1"
+                                        BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="14,10">
+                                    <Grid ColumnDefinitions="*, *" ColumnSpacing="8">
+                                        <Button Grid.Column="0"
+                                                Command="{Binding UndoEffectCommand}"
+                                                Classes="ghost" Height="36"
+                                                IsEnabled="{Binding CanUndoEffect}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                                <Path Classes="icon icon-muted" Data="{StaticResource IconUndo}" Width="13" Height="13" />
+                                                <TextBlock Text="Undo" FontSize="11" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="1"
+                                                Command="{Binding ResetAllCommand}"
+                                                Classes="ghost" Height="36">
+                                            <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                                <Path Classes="icon icon-muted" Data="{StaticResource IconClear}" Width="13" Height="13" />
+                                                <TextBlock Text="Clear All" FontSize="11" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+
+                            <!-- SERVER SHEET -->
+                            <ScrollViewer IsVisible="{Binding IsMobileServerSheet}" Padding="14,0,14,14">
+                                <StackPanel Spacing="12">
+                                    <Border Classes="param-cell" Padding="12">
+                                        <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="10">
+                                            <Border Width="36" Height="36" CornerRadius="10"
+                                                    Background="{DynamicResource AccentSoftBrush}"
+                                                    BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1">
+                                                <Path Classes="icon icon-accent" Data="{StaticResource IconServer}" Width="16" Height="16" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                <TextBlock Text="SAM3 API" FontWeight="SemiBold" FontSize="13" />
+                                                <TextBlock Text="Segmentation backend" Classes="label" FontSize="10" />
+                                            </StackPanel>
+                                            <Border Grid.Column="2" Classes="status-pill" VerticalAlignment="Center"
+                                                    IsVisible="{Binding IsConnected}">
+                                                <TextBlock Text="Online" Classes="label-strong" FontSize="9"
+                                                           Foreground="{DynamicResource SuccessBrush}" />
+                                            </Border>
+                                            <Border Grid.Column="2" Classes="status-pill-muted" VerticalAlignment="Center"
+                                                    IsVisible="{Binding IsConnected, Converter={StaticResource InverseBoolConverter}}">
+                                                <TextBlock Text="Offline" Classes="label-strong" FontSize="9" />
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Text="Endpoint URL" Classes="h3" Margin="2,0,0,0" />
+                                        <Border Classes="url-input" HorizontalAlignment="Stretch">
+                                            <Grid ColumnDefinitions="Auto, *">
+                                                <Path Grid.Column="0" Classes="icon icon-tertiary"
+                                                      Data="{StaticResource IconServer}"
+                                                      Width="13" Height="13" Margin="10,0,6,0"
+                                                      VerticalAlignment="Center" />
+                                                <TextBox Grid.Column="1"
+                                                         Text="{Binding ServerUrl}"
+                                                         Watermark="https://your-server.example"
+                                                         FontSize="12"
+                                                         HorizontalAlignment="Stretch"
+                                                         ClipToBounds="True" />
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <Button Command="{Binding CheckConnectionCommand}"
+                                            Classes="primary"
+                                            HorizontalAlignment="Stretch" Height="40"
+                                            IsEnabled="{Binding CanRunConnectionCheck}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Path Classes="icon" Data="{StaticResource IconBolt}" Width="13" Height="13" Stroke="White" />
+                                            <TextBlock Text="{Binding ConnectionButtonText}" FontSize="11" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Border Classes="param-cell" Padding="12,10">
+                                        <StackPanel Spacing="3">
+                                            <TextBlock Text="Status" Classes="h3" />
+                                            <TextBlock Text="{Binding StatusMessage}"
+                                                       FontSize="11" TextWrapping="Wrap"
+                                                       Foreground="{Binding IsConnected, Converter={StaticResource BoolToColorConverter}, ConverterParameter=status}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Panel>
+                    </Grid>
+                </Border>
+            </Panel>
+
+            <!-- Bottom nav -->
+            <Border Grid.Row="2"
+                    Background="{DynamicResource PanelElevatedBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,1,0,0"
+                    Padding="6,4">
+                <UniformGrid Columns="5">
+                    <Button Classes="nav-btn cta"
+                            Command="{Binding OpenImageCommand}"
+                            CommandParameter="{Binding #Root}">
+                        <StackPanel Spacing="3" HorizontalAlignment="Center">
+                            <Path Data="{StaticResource IconImport}" Width="18" Height="18"
+                                  Stroke="{DynamicResource OnAccentTextBrush}" StrokeThickness="1.7" Fill="Transparent" />
+                            <TextBlock Text="Open" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-btn"
+                            Classes.active="{Binding IsMobileSegmentSheet}"
+                            Command="{Binding ToggleMobileSheetCommand}"
+                            CommandParameter="Segment">
+                        <StackPanel Spacing="3" HorizontalAlignment="Center">
+                            <Path Data="{StaticResource IconSegment}" Width="18" Height="18" />
+                            <TextBlock Text="Segment" FontSize="10" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-btn"
+                            Classes.active="{Binding IsMobileEffectsSheet}"
+                            Command="{Binding ToggleMobileSheetCommand}"
+                            CommandParameter="Effects">
+                        <StackPanel Spacing="3" HorizontalAlignment="Center">
+                            <Path Data="{StaticResource IconSliders}" Width="18" Height="18" />
+                            <TextBlock Text="Effects" FontSize="10" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-btn"
+                            Classes.active="{Binding IsMobileLayersSheet}"
+                            Command="{Binding ToggleMobileSheetCommand}"
+                            CommandParameter="Layers">
+                        <StackPanel Spacing="3" HorizontalAlignment="Center">
+                            <Path Data="{StaticResource IconLayers}" Width="18" Height="18" />
+                            <TextBlock Text="Layers" FontSize="10" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="nav-btn"
+                            Command="{Binding SaveImageCommand}"
+                            CommandParameter="{Binding #Root}"
+                            IsEnabled="{Binding CanSaveImage}">
+                        <StackPanel Spacing="3" HorizontalAlignment="Center">
+                            <Path Data="{StaticResource IconExport}" Width="18" Height="18" />
+                            <TextBlock Text="Export" FontSize="10" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </UniformGrid>
+            </Border>
+        </Grid>
+
+    </Panel>
+</UserControl>

@@ -240,6 +240,42 @@
     <Setter Property="Opacity" Value="0.42" />
   </Style>
 
+  <!-- card-button: transparent wrapper around a rounded card. Suppresses the
+       default pointerover/pressed/focus background painted on Border#ButtonRoot
+       so it doesn't show as a hard rectangle around or behind the card. -->
+  <Style Selector="Button.card-button">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="RenderTransform" Value="none" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.14" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="Button.card-button /template/ Border#ButtonRoot">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.card-button:pointerover">
+    <Setter Property="RenderTransform" Value="translateY(-2px)" />
+  </Style>
+  <Style Selector="Button.card-button:pointerover /template/ Border#ButtonRoot">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.card-button:pressed">
+    <Setter Property="RenderTransform" Value="translateY(0)" />
+  </Style>
+  <Style Selector="Button.card-button:pressed /template/ Border#ButtonRoot">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.card-button:focus-visible /template/ Border#ButtonRoot">
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
   <!-- Primary CTA — calm blue, not neon cyan -->
   <Style Selector="Button.primary">
     <Setter Property="Foreground" Value="#FFFFFF" />
@@ -419,7 +455,6 @@
     <Setter Property="Height" Value="40" />
     <Setter Property="Padding" Value="20,0" />
     <Setter Property="FontWeight" Value="Bold" />
-    <Setter Property="LetterSpacing" Value="0.08" />
     <Setter Property="Background">
       <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
         <GradientStop Color="#67E8F9" Offset="0" />
@@ -499,7 +534,6 @@
     <Setter Property="CornerRadius" Value="8" />
     <Setter Property="FontWeight" Value="Medium" />
     <Setter Property="FontSize" Value="12" />
-    <Setter Property="LetterSpacing" Value="0" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="VerticalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -608,7 +642,6 @@
     <Setter Property="CornerRadius" Value="16" />
     <Setter Property="FontWeight" Value="Medium" />
     <Setter Property="FontSize" Value="12" />
-    <Setter Property="LetterSpacing" Value="0" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="Template">

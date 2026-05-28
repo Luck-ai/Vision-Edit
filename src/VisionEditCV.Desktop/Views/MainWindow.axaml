@@ -5,13 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
         x:Class="VisionEditCV.Desktop.Views.MainWindow"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="avares://VisionEditCV.Shared/Assets/avalonia-logo.ico"
         Title="VisionEditCV"
         WindowStartupLocation="CenterScreen"
         MinWidth="1280" MinHeight="800"
         Background="{DynamicResource AppBackgroundBrush}"
         ExtendClientAreaToDecorationsHint="True"
         Classes="main-window">
-    
-    <views:MainView />
+
+    <views:MainShellView />
 </Window>

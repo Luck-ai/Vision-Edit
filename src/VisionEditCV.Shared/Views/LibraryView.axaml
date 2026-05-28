@@ -1,0 +1,384 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VisionEditCV.Shared.ViewModels"
+             xmlns:models="using:VisionEditCV.Shared.Models"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
+             x:Class="VisionEditCV.Shared.Views.LibraryView"
+             x:Name="Root"
+             x:DataType="vm:LibraryViewModel"
+             Background="{DynamicResource AppBackgroundBrush}">
+
+  <UserControl.KeyBindings>
+    <KeyBinding Gesture="Ctrl+O" Command="{Binding NewProjectCommand}" CommandParameter="{Binding #Root}" />
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding NewProjectCommand}" CommandParameter="{Binding #Root}" />
+  </UserControl.KeyBindings>
+
+  <UserControl.Styles>
+    <Style Selector="Button.nav-rail-item">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="12,9" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+    </Style>
+    <Style Selector="Button.nav-rail-item /template/ Border#ButtonRoot">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.nav-rail-item:pointerover /template/ Border#ButtonRoot">
+      <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.nav-rail-item:pressed /template/ Border#ButtonRoot">
+      <Setter Property="Background" Value="{DynamicResource SurfacePressedBrush}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.nav-rail-item.active /template/ Border#ButtonRoot">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentMutedBrush}" />
+    </Style>
+    <Style Selector="Button.nav-rail-item.active">
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Button.nav-rail-item Path">
+      <Setter Property="Stroke" Value="{Binding $parent[Button].Foreground}" />
+      <Setter Property="StrokeThickness" Value="1.8" />
+      <Setter Property="Fill" Value="Transparent" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto, *, Auto" Background="{DynamicResource AppBackgroundBrush}">
+
+    <!-- ============ TOP BAR ============ -->
+    <Border Grid.Row="0" Classes="top-bar" Padding="20,12">
+      <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="24">
+
+        <!-- Brand -->
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+          <Border Width="34" Height="34" CornerRadius="9"
+                  Background="{DynamicResource AccentSoftBrush}"
+                  BorderBrush="{DynamicResource AccentMutedBrush}"
+                  BorderThickness="1">
+            <Path Data="{StaticResource IconLogo}" Width="16" Height="16"
+                  Fill="{DynamicResource AccentBrush}" Stretch="Uniform"
+                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+          <StackPanel Spacing="2" VerticalAlignment="Center">
+            <TextBlock Text="VisionEdit" Classes="h2" FontSize="15" LetterSpacing="-0.02" />
+            <Border Background="{DynamicResource AccentSoftBrush}"
+                    BorderBrush="{DynamicResource AccentMutedBrush}"
+                    BorderThickness="1" CornerRadius="4" Padding="5,2"
+                    HorizontalAlignment="Left">
+              <TextBlock Text="NEURAL STUDIO" Classes="brand-badge" />
+            </Border>
+          </StackPanel>
+        </StackPanel>
+
+        <!-- Search -->
+        <Border Grid.Column="1" Classes="composer" Width="520" Height="40"
+                Padding="14,3,14,3" HorizontalAlignment="Center">
+          <Grid ColumnDefinitions="Auto, *" ColumnSpacing="8">
+            <Path Grid.Column="0" Data="{StaticResource IconSearch}" Width="14" Height="14"
+                  Stroke="{DynamicResource TextTertiaryBrush}" StrokeThickness="2"
+                  Stretch="Uniform" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Watermark="Search projects by name…"
+                     Text="{Binding SearchQuery, Mode=TwoWay}"
+                     Background="Transparent" BorderThickness="0"
+                     VerticalContentAlignment="Center"
+                     Foreground="{DynamicResource TextPrimaryBrush}" />
+          </Grid>
+        </Border>
+
+        <!-- New project -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Classes="accent" Height="36" Padding="18,0"
+                  Command="{Binding NewProjectCommand}"
+                  CommandParameter="{Binding #Root}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Path Data="M12,5 L12,19 M5,12 L19,12" Width="14" Height="14"
+                    Stroke="{DynamicResource OnAccentTextBrush}" StrokeThickness="2.5" Stretch="Uniform" />
+              <TextBlock Text="NEW PROJECT" FontSize="12" FontWeight="Bold" LetterSpacing="0.06" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- ============ WORKSPACE ============ -->
+    <Grid Grid.Row="1" ColumnDefinitions="220, *" ColumnSpacing="12" Margin="12">
+
+      <!-- =========== LEFT NAV RAIL =========== -->
+      <Border Grid.Column="0" Classes="app-panel">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Margin="14,16,14,16" Spacing="2">
+
+            <TextBlock Text="WORKSPACE" Classes="mono"
+                       FontSize="9" LetterSpacing="0.18"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Margin="4,0,4,10" />
+
+            <Button Classes="nav-rail-item"
+                    Classes.active="{Binding IsAllFilter}"
+                    Command="{Binding SelectFilterCommand}" CommandParameter="All">
+              <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="11">
+                <Path Grid.Column="0" Data="{StaticResource IconImage}" Width="17" Height="17" Stretch="Uniform" />
+                <TextBlock Grid.Column="1" Text="Library" FontSize="13" FontWeight="Medium"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding AllCount}" Classes="mono" FontSize="10"
+                           VerticalAlignment="Center" />
+              </Grid>
+            </Button>
+
+            <Button Classes="nav-rail-item"
+                    Classes.active="{Binding IsInProgressFilter}"
+                    Command="{Binding SelectFilterCommand}" CommandParameter="InProgress">
+              <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="11">
+                <Path Grid.Column="0" Data="{StaticResource IconSliders}" Width="17" Height="17" Stretch="Uniform" />
+                <TextBlock Grid.Column="1" Text="In progress" FontSize="13" FontWeight="Medium"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding InProgressCount}" Classes="mono" FontSize="10"
+                           VerticalAlignment="Center" />
+              </Grid>
+            </Button>
+
+            <Button Classes="nav-rail-item"
+                    Classes.active="{Binding IsExportedFilter}"
+                    Command="{Binding SelectFilterCommand}" CommandParameter="Exported">
+              <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="11">
+                <Path Grid.Column="0" Data="{StaticResource IconExport}" Width="17" Height="17" Stretch="Uniform" />
+                <TextBlock Grid.Column="1" Text="Exports" FontSize="13" FontWeight="Medium"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding ExportedCount}" Classes="mono" FontSize="10"
+                           VerticalAlignment="Center" />
+              </Grid>
+            </Button>
+
+            <Button Classes="nav-rail-item"
+                    Classes.active="{Binding IsPinnedFilter}"
+                    Command="{Binding SelectFilterCommand}" CommandParameter="Pinned">
+              <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="11">
+                <Path Grid.Column="0" Data="M19,21 L12,16 L5,21 L5,5 A2,2 0 0 1 7,3 L17,3 A2,2 0 0 1 19,5 Z"
+                      Width="17" Height="17" Stretch="Uniform" />
+                <TextBlock Grid.Column="1" Text="Pinned" FontSize="13" FontWeight="Medium"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding PinnedCount}" Classes="mono" FontSize="10"
+                           VerticalAlignment="Center" />
+              </Grid>
+            </Button>
+
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+
+      <!-- =========== MAIN CONTENT =========== -->
+      <Border Grid.Column="1" Classes="app-panel">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+          <StackPanel Margin="32,28,32,32">
+
+            <!-- Page header -->
+            <StackPanel Spacing="8" Margin="0,0,0,28">
+              <TextBlock Text="{Binding ProjectCountText}" Classes="mono"
+                         FontSize="10" LetterSpacing="0.16"
+                         Foreground="{DynamicResource TextSecondaryBrush}" />
+              <TextBlock Text="Library" FontSize="30" FontWeight="Bold"
+                         LetterSpacing="-0.025" Foreground="{DynamicResource TextPrimaryBrush}" />
+            </StackPanel>
+
+            <!-- Continue editing (hidden when no real projects) -->
+            <StackPanel IsVisible="{Binding HasRecentProjects}" Spacing="14" Margin="0,0,0,36">
+              <TextBlock Text="Continue editing" FontSize="13" FontWeight="Bold" LetterSpacing="-0.01"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <ItemsControl ItemsSource="{Binding RecentProjects}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <UniformGrid Columns="4" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="models:ProjectItem">
+                    <Button Classes="card-button" Margin="7,0" Cursor="Hand"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            Command="{Binding $parent[ItemsControl].((vm:LibraryViewModel)DataContext).OpenProjectCommand}"
+                            CommandParameter="{Binding $self}">
+                      <Border CornerRadius="14" ClipToBounds="True" Height="170"
+                              BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                              Background="{Binding ThumbBrush}">
+                        <Panel>
+                          <Border>
+                            <Border.Background>
+                              <LinearGradientBrush StartPoint="0%,40%" EndPoint="0%,100%">
+                                <GradientStop Color="#00000000" Offset="0" />
+                                <GradientStop Color="#B3000000" Offset="1" />
+                              </LinearGradientBrush>
+                            </Border.Background>
+                          </Border>
+                          <StackPanel VerticalAlignment="Bottom" Margin="14,0,14,12" Spacing="3">
+                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="Bold"
+                                       LetterSpacing="-0.01" Foreground="White" />
+                            <TextBlock Text="{Binding LastEditedText}" Classes="mono"
+                                       FontSize="10" LetterSpacing="0.05" Foreground="#B3FFFFFF" />
+                          </StackPanel>
+                        </Panel>
+                      </Border>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+
+            <!-- All projects -->
+            <Grid ColumnDefinitions="*, Auto" Margin="0,0,0,14">
+              <TextBlock Grid.Column="0" Text="All projects" FontSize="13" FontWeight="Bold"
+                         LetterSpacing="-0.01" Foreground="{DynamicResource TextPrimaryBrush}" />
+              <TextBlock Grid.Column="1" Text="{Binding ProjectCountSummary}" Classes="mono"
+                         FontSize="10" LetterSpacing="0.08"
+                         Foreground="{DynamicResource TextSecondaryBrush}" />
+            </Grid>
+
+            <ItemsControl ItemsSource="{Binding Projects}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <UniformGrid Columns="4" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="models:ProjectItem">
+                  <Button Classes="card-button" Margin="7" Cursor="Hand"
+                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          Command="{Binding $parent[ItemsControl].((vm:LibraryViewModel)DataContext).OpenProjectCommand}"
+                          CommandParameter="{Binding $self}">
+                    <Border CornerRadius="14" ClipToBounds="True"
+                            Background="{DynamicResource PanelElevatedBrush}"
+                            BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1">
+                      <StackPanel>
+                        <!-- Thumb -->
+                        <Border Height="160" Background="{Binding ThumbBrush}">
+                          <Panel>
+                            <Panel IsVisible="{Binding IsNewProject}">
+                              <Path Data="M12,5 L12,19 M5,12 L19,12" Width="36" Height="36"
+                                    Stroke="{DynamicResource AccentBrush}" StrokeThickness="2"
+                                    Stretch="Uniform"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Panel>
+                            <!-- Dimensions corner (real projects only) -->
+                            <Border IsVisible="{Binding !IsNewProject}"
+                                    VerticalAlignment="Top" HorizontalAlignment="Right"
+                                    Background="#8C03060E"
+                                    BorderBrush="#1AFFFFFF" BorderThickness="1"
+                                    CornerRadius="5" Padding="7,3" Margin="0,10,10,0">
+                              <TextBlock Text="{Binding DimensionsText}" Classes="mono"
+                                         FontSize="10" LetterSpacing="0.04" Foreground="White" />
+                            </Border>
+                            <!-- Pinned badge -->
+                            <Border IsVisible="{Binding IsPinned}"
+                                    VerticalAlignment="Top" HorizontalAlignment="Left"
+                                    Background="{DynamicResource AccentSoftBrush}"
+                                    BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1"
+                                    CornerRadius="5" Padding="6,3" Margin="10,10,0,0">
+                              <Path Data="M19,21 L12,16 L5,21 L5,5 A2,2 0 0 1 7,3 L17,3 A2,2 0 0 1 19,5 Z"
+                                    Width="11" Height="11" Stretch="Uniform"
+                                    Fill="{DynamicResource AccentBrush}" />
+                            </Border>
+                          </Panel>
+                        </Border>
+                        <!-- Body -->
+                        <StackPanel Margin="14,12,14,14" Spacing="4">
+                          <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                     LetterSpacing="-0.01" TextTrimming="CharacterEllipsis"
+                                     Foreground="{DynamicResource TextPrimaryBrush}" />
+                          <TextBlock Text="{Binding MetaText}" Classes="mono"
+                                     FontSize="10" LetterSpacing="0.04"
+                                     Foreground="{DynamicResource TextSecondaryBrush}" />
+                          <Grid ColumnDefinitions="Auto, *, Auto, Auto" Margin="0,6,0,0">
+                            <Border Grid.Column="0" IsVisible="{Binding ShowStartTag}"
+                                    Background="{DynamicResource AccentSoftBrush}"
+                                    BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1"
+                                    CornerRadius="4" Padding="7,3">
+                              <TextBlock Text="START" Classes="mono" FontSize="9" LetterSpacing="0.08"
+                                         Foreground="{DynamicResource AccentBrush}" />
+                            </Border>
+                            <Border Grid.Column="0" IsVisible="{Binding ShowInProgressTag}"
+                                    Background="{DynamicResource AccentSoftBrush}"
+                                    BorderBrush="{DynamicResource AccentMutedBrush}" BorderThickness="1"
+                                    CornerRadius="4" Padding="7,3">
+                              <TextBlock Text="IN PROGRESS" Classes="mono" FontSize="9" LetterSpacing="0.08"
+                                         Foreground="{DynamicResource AccentBrush}" />
+                            </Border>
+                            <Border Grid.Column="0" IsVisible="{Binding ShowExportedTag}"
+                                    Background="{DynamicResource SuccessMutedBrush}"
+                                    BorderBrush="{DynamicResource SuccessMutedBrush}" BorderThickness="1"
+                                    CornerRadius="4" Padding="7,3">
+                              <TextBlock Text="EXPORTED" Classes="mono" FontSize="9" LetterSpacing="0.08"
+                                         Foreground="{DynamicResource SuccessBrush}" />
+                            </Border>
+                            <Border Grid.Column="0" IsVisible="{Binding ShowDraftTag}"
+                                    Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1"
+                                    CornerRadius="4" Padding="7,3">
+                              <TextBlock Text="DRAFT" Classes="mono" FontSize="9" LetterSpacing="0.08"
+                                         Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </Border>
+                            <!-- Action buttons (hidden for the "new" tile) -->
+                            <Button Grid.Column="2" IsVisible="{Binding !IsNewProject}"
+                                    Classes="icon-button" Width="24" Height="24"
+                                    Command="{Binding $parent[ItemsControl].((vm:LibraryViewModel)DataContext).TogglePinCommand}"
+                                    CommandParameter="{Binding}"
+                                    ToolTip.Tip="Pin / unpin">
+                              <Path Data="M19,21 L12,16 L5,21 L5,5 A2,2 0 0 1 7,3 L17,3 A2,2 0 0 1 19,5 Z"
+                                    Width="11" Height="11" Stretch="Uniform"
+                                    Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.6" />
+                            </Button>
+                            <Button Grid.Column="3" IsVisible="{Binding !IsNewProject}"
+                                    Classes="icon-button" Width="24" Height="24" Margin="4,0,0,0"
+                                    Command="{Binding $parent[ItemsControl].((vm:LibraryViewModel)DataContext).DeleteProjectCommand}"
+                                    CommandParameter="{Binding}"
+                                    ToolTip.Tip="Remove from library">
+                              <Path Data="{StaticResource IconClose}" Width="11" Height="11" Stretch="Uniform"
+                                    Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.8" />
+                            </Button>
+                          </Grid>
+                        </StackPanel>
+                      </StackPanel>
+                    </Border>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Grid>
+
+    <!-- ============ STATUS BAR ============ -->
+    <Border Grid.Row="2" Background="{DynamicResource PanelBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="0,1,0,0"
+            Height="30" Padding="16,0">
+      <Grid ColumnDefinitions="*, Auto">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+          <TextBlock Text="{Binding ProjectCountText}" Classes="mono"
+                     FontSize="10" LetterSpacing="0.06"
+                     Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <TextBlock Text="OPEN" Classes="mono" FontSize="10" LetterSpacing="0.06"
+                       Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+            <Border Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1,1,1,2"
+                    CornerRadius="4" Padding="6,1">
+              <TextBlock Text="Ctrl O" Classes="mono" FontSize="9"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+            </Border>
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+  </Grid>
+</UserControl>

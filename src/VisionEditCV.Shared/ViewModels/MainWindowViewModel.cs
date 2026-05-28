@@ -379,6 +379,52 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ObservableCollection<string> History { get; } = new();
 
+    public event EventHandler? BackRequested;
+
+    [RelayCommand]
+    private void BackToLibrary() => BackRequested?.Invoke(this, EventArgs.Empty);
+
+    // ---------- Mobile bottom-sheet state ----------
+    [ObservableProperty] private string _mobileSheetTab = "";
+
+    public bool IsMobileSheetOpen => !string.IsNullOrEmpty(MobileSheetTab);
+    public bool IsMobileSegmentSheet => MobileSheetTab == "Segment";
+    public bool IsMobileEffectsSheet => MobileSheetTab == "Effects";
+    public bool IsMobileLayersSheet => MobileSheetTab == "Layers";
+    public bool IsMobileHistorySheet => MobileSheetTab == "History";
+    public bool IsMobileServerSheet => MobileSheetTab == "Server";
+
+    public string MobileSheetTitle => MobileSheetTab switch
+    {
+        "Segment" => "Segment",
+        "Effects" => "Effects",
+        "Layers" => "Masks",
+        "History" => "History",
+        "Server" => "Server",
+        _ => ""
+    };
+
+    partial void OnMobileSheetTabChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsMobileSheetOpen));
+        OnPropertyChanged(nameof(IsMobileSegmentSheet));
+        OnPropertyChanged(nameof(IsMobileEffectsSheet));
+        OnPropertyChanged(nameof(IsMobileLayersSheet));
+        OnPropertyChanged(nameof(IsMobileHistorySheet));
+        OnPropertyChanged(nameof(IsMobileServerSheet));
+        OnPropertyChanged(nameof(MobileSheetTitle));
+    }
+
+    [RelayCommand]
+    private void ToggleMobileSheet(string? tab)
+    {
+        var next = tab ?? "";
+        MobileSheetTab = MobileSheetTab == next ? "" : next;
+    }
+
+    [RelayCommand]
+    private void CloseMobileSheet() => MobileSheetTab = "";
+
     public MainWindowViewModel()
     {
         _client.BaseUrl = ServerUrl;
@@ -650,6 +696,23 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
+        LoadImageFromPath(path);
+    }
+
+    [RelayCommand]
+    private void OpenImageFromPath(string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return;
+        if (!File.Exists(path))
+        {
+            StatusMessage = $"File not found: {Path.GetFileName(path)}";
+            return;
+        }
+        LoadImageFromPath(path);
+    }
+
+    private void LoadImageFromPath(string path)
+    {
         Bitmap? loaded;
         try
         {
@@ -691,7 +754,6 @@ public partial class MainWindowViewModel : ViewModelBase
         StatusMessage = $"Loaded: {Path.GetFileName(path)}";
         OnPropertyChanged(nameof(CanSegment));
         RefreshUiState();
-        // Dispose previous bitmaps after the bindings have switched off them.
         oldCurrent?.Dispose();
         oldProcessed?.Dispose();
     }
@@ -964,6 +1026,7 @@ public partial class MainWindowViewModel : ViewModelBase
             await using var stream = await file.OpenWriteAsync();
             ProcessedImage.Save(stream);
             StatusMessage = $"Saved to {file.Name}.";
+            ProjectExported?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
         {
@@ -974,6 +1037,8 @@ public partial class MainWindowViewModel : ViewModelBase
             RefreshUiState();
         }
     }
+
+    public event EventHandler? ProjectExported;
 
     private Mat ApplyEffectToMask(Mat source, float[,] mask)
     {

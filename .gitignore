@@ -3,6 +3,11 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Agent / tool caches (Claude Code, Canva artifacts, prior prototypes)
+.od-skills/
+_old/
+*.artifact.json
+
 # User-specific files
 *.rsuser
 *.suo

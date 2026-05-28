@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- 108dp adaptive-icon canvas with 18dp safe inset on each side, so artwork lives in the central 72x72 area. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- in-app logo path scaled from 24x24 viewport to fit the 72x72 safe area, centred -->
+    <group
+        android:translateX="18"
+        android:translateY="18"
+        android:scaleX="3"
+        android:scaleY="3">
+        <path
+            android:fillColor="#22D3EE"
+            android:pathData="M12,2 L22,20 L12,16 L2,20 Z" />
+    </group>
+</vector>

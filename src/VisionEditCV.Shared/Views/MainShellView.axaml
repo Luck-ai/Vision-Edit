@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VisionEditCV.Shared.ViewModels"
+             xmlns:views="using:VisionEditCV.Shared.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1440" d:DesignHeight="900"
+             x:Class="VisionEditCV.Shared.Views.MainShellView"
+             x:DataType="vm:AppShellViewModel"
+             Background="{DynamicResource AppBackgroundBrush}">
+
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="vm:LibraryViewModel">
+      <views:LibraryView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:MainWindowViewModel">
+      <views:MainView />
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <TransitioningContentControl Content="{Binding CurrentViewModel}">
+    <TransitioningContentControl.PageTransition>
+      <CrossFade Duration="0:0:0.22" />
+    </TransitioningContentControl.PageTransition>
+  </TransitioningContentControl>
+</UserControl>

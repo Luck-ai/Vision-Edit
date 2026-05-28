@@ -1,0 +1,113 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:VisionEditCV.Shared.ViewModels"
+             xmlns:views="using:VisionEditCV.Shared.Views"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="430" d:DesignHeight="852"
+             x:Class="VisionEditCV.Shared.Views.MobileShellView"
+             x:Name="Root"
+             x:DataType="vm:AppShellViewModel"
+             Background="{DynamicResource AppBackgroundBrush}">
+
+  <UserControl.Styles>
+    <Style Selector="Button.nav-tab">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="8,8" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}" />
+    </Style>
+    <Style Selector="Button.nav-tab /template/ Border#ButtonRoot">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.nav-tab:pointerover /template/ Border#ButtonRoot">
+      <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.nav-tab.active /template/ Border#ButtonRoot">
+      <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.nav-tab.active">
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Button.nav-tab Path">
+      <Setter Property="Stroke" Value="{Binding $parent[Button].Foreground}" />
+      <Setter Property="StrokeThickness" Value="1.8" />
+      <Setter Property="Fill" Value="Transparent" />
+    </Style>
+  </UserControl.Styles>
+
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="vm:MainWindowViewModel">
+      <views:MobileView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:LibraryViewModel">
+      <views:MobileHomeView />
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <Grid RowDefinitions="*, Auto" Background="{DynamicResource AppBackgroundBrush}">
+
+    <!-- Cross-fades between MobileView (editor) and the active home tab -->
+    <Panel Grid.Row="0">
+      <!-- Outer fade: Editor vs Library shell -->
+      <TransitioningContentControl Content="{Binding CurrentViewModel}">
+        <TransitioningContentControl.PageTransition>
+          <CrossFade Duration="0:0:0.22" />
+        </TransitioningContentControl.PageTransition>
+      </TransitioningContentControl>
+      <!-- Inner fade for the History / Settings tabs (only when Library shell is showing).
+           These overlay the home tab; we hide everything when on Home or on Editor. -->
+      <Panel IsVisible="{Binding IsLibraryView}">
+        <Panel IsVisible="{Binding IsHistoryTab}">
+          <views:MobileHistoryView DataContext="{Binding Editor}" />
+        </Panel>
+        <Panel IsVisible="{Binding IsSettingsTab}">
+          <views:MobileSettingsView DataContext="{Binding Editor}" />
+        </Panel>
+      </Panel>
+    </Panel>
+
+    <!-- Bottom float-dock nav (visible only on the library shell) -->
+    <Border Grid.Row="1" IsVisible="{Binding IsLibraryView}" Margin="16,0,16,16"
+            Background="{DynamicResource GlassBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1"
+            CornerRadius="18" Padding="8,6">
+      <Border.Effect>
+        <DropShadowEffect BlurRadius="22" OffsetY="14" Opacity="0.5" Color="Black" />
+      </Border.Effect>
+      <UniformGrid Columns="3">
+        <Button Classes="nav-tab" Classes.active="{Binding IsHomeTab}"
+                Command="{Binding SelectMobileTabCommand}" CommandParameter="Home">
+          <StackPanel Spacing="3" HorizontalAlignment="Center">
+            <Path Data="{StaticResource IconImage}" Width="18" Height="18" Stretch="Uniform" />
+            <TextBlock Text="LIBRARY" FontSize="9.5" FontWeight="SemiBold" LetterSpacing="0.1"
+                       HorizontalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button Classes="nav-tab" Classes.active="{Binding IsHistoryTab}"
+                Command="{Binding SelectMobileTabCommand}" CommandParameter="History">
+          <StackPanel Spacing="3" HorizontalAlignment="Center">
+            <Path Data="{StaticResource IconHistory}" Width="18" Height="18" Stretch="Uniform" />
+            <TextBlock Text="HISTORY" FontSize="9.5" FontWeight="SemiBold" LetterSpacing="0.1"
+                       HorizontalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button Classes="nav-tab" Classes.active="{Binding IsSettingsTab}"
+                Command="{Binding SelectMobileTabCommand}" CommandParameter="Settings">
+          <StackPanel Spacing="3" HorizontalAlignment="Center">
+            <Path Data="{StaticResource IconSliders}" Width="18" Height="18" Stretch="Uniform" />
+            <TextBlock Text="SETTINGS" FontSize="9.5" FontWeight="SemiBold" LetterSpacing="0.1"
+                       HorizontalAlignment="Center" />
+          </StackPanel>
+        </Button>
+      </UniformGrid>
+    </Border>
+
+  </Grid>
+</UserControl>
