@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VisionEditCV — Mobile v2</title>
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    .wrap{width:min(1100px, 96vw); display:grid; gap:16px; padding:18px;}
+    .hero{display:flex; gap:14px; align-items:flex-end; justify-content:space-between; flex-wrap:wrap}
+    .hero h1{margin:0; font-size:22px; letter-spacing:-.02em}
+    .hero p{margin:6px 0 0; color:rgba(255,255,255,.65); font-size:13px; max-width: 70ch}
+    .grid{display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px;}
+    .tile{display:block; text-decoration:none; color:inherit}
+    .tile .card{height:100%;}
+    .thumb{border-radius: 18px; border:1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); height:130px; display:grid; place-items:center; position:relative; overflow:hidden}
+    .thumb:before{content:""; position:absolute; inset:-40%; background:radial-gradient(circle at 30% 20%, rgba(34,211,238,.12), transparent 45%); transform: rotate(-6deg)}
+    .thumb .k{position:relative}
+    .hint{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between}
+    .hint .mono{color:rgba(255,255,255,.55); font-size:12px}
+    .mini{display:flex; gap:8px; flex-wrap:wrap}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <h1>VisionEditCV — Mobile v2 (preview-first)</h1>
+        <p>5-screen iPhone-size shell using the existing <span class="mono">deep-navy + electric-cyan</span> theme. Bottom controls are docked in-flow (never cover the image). Masks supports press-and-hold <span class="mono">BEFORE</span>.</p>
+      </div>
+      <div class="mini">
+        <a class="btn small" href="editor.html" style="text-decoration:none">Jump to Masks</a>
+        <a class="btn small ghost" href="effects.html" style="text-decoration:none">Jump to Effects</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <a class="tile" href="home.html"><div class="card"><div class="thumb"><div class="k mono">01</div></div><div class="h">Home</div><div class="p">Recents + Import. No hamburger; top actions only.</div></div></a>
+      <a class="tile" href="editor.html"><div class="card"><div class="thumb"><div class="k mono">02</div></div><div class="h">Masks</div><div class="p">Segment & manage masks (Bounding Box / Prompt). Docked controls + hold-to-compare.</div></div></a>
+      <a class="tile" href="effects.html"><div class="card"><div class="thumb"><div class="k mono">03</div></div><div class="h">Effects</div><div class="p">Exact app effects + real knobs (Color Grading, Artistic Style, Sticker, Pixelation & Blur, Portrait, Grayscale).</div></div></a>
+      <a class="tile" href="history.html"><div class="card"><div class="thumb"><div class="k mono">04</div></div><div class="h">History</div><div class="p">Restore points. Compare per step via hold.</div></div></a>
+      <a class="tile" href="settings.html"><div class="card"><div class="thumb"><div class="k mono">05</div></div><div class="h">Settings</div><div class="p">Preview behavior, export quality, about.</div></div></a>
+    </div>
+
+    <div class="hint">
+      <div class="mono">Tip: open <span class="mono">editor.html</span> and press-and-hold the “Compare” button.</div>
+      <div class="mono">State is stored in <span class="mono">localStorage</span> (history + params placeholders).</div>
+    </div>
+  </div>
+  <script src="shared.js"></script>
+</body>
+</html>
